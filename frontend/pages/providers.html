@@ -96,11 +96,12 @@
         </div>
 
         <!-- Location -->
-        <div class="search-field" style="flex: 1 1 160px;">
+        <div class="search-field" style="flex: 1 1 180px; position: relative;">
           <span class="search-field-icon">
             <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
           </span>
-          <input type="text" id="filterLocation" placeholder="City or locality...">
+          <input type="text" id="filterLocation" placeholder="City or locality..." style="padding-right: 75px;">
+          <button type="button" class="btn-location-detect" onclick="detectUserLocation('filterLocation', () => loadProviders())">📍 GPS</button>
         </div>
 
         <!-- Rating Filter -->

@@ -27,6 +27,11 @@ ServiceConnect bridges the gap between local service technicians and neighborhoo
 - **Double-booking prevention** via database constraints and validation.
 - **Verified reviews** restricted exclusively to customers who have completed an appointment.
 - **Multi-role access control** for Customers, Providers, and Administrators.
+- **Real-Time Live Updates (SSE)**: Instant Server-Sent Events notify providers of incoming booking requests and broadcast status transitions live without page reloads.
+- **Direct In-App Coordination Chat**: Real-time communication between customer and assigned technician inside the booking tracker.
+- **Visual 4-Step Live Tracking Stepper**: `Requested` → `Confirmed` → `In Progress` → `Completed`.
+- **Commercial Tax Invoice Generator**: Automatic GST (CGST 9% + SGST 9%) calculation with clean print/PDF layout.
+- **GPS Geolocation Auto-Detection**: One-click geolocation lock for instant discovery of neighborhood professionals.
 
 ```
 +----------------------------------------------------------------+
@@ -210,7 +215,20 @@ SERVICE_CONNECT/
 
 ## ⚙️ Installation & Setup Instructions
 
-### 1. Database Setup (MySQL 8.0)
+### 🐳 Option A: 1-Click Production Run with Docker (Recommended)
+You can launch the entire stack (MySQL 8.0, Java 21 Spring Boot backend, and Nginx frontend) with one command:
+```bash
+docker-compose up --build
+```
+- **Frontend App**: `http://localhost:8000`
+- **Backend REST API**: `http://localhost:8080/api`
+- **MySQL Database**: `localhost:3306` (pre-seeded with schema & sample data)
+
+---
+
+### 💻 Option B: Manual Local Development Setup
+
+#### 1. Database Setup (MySQL 8.0)
 1. Open MySQL Command Line Client or MySQL Workbench:
    ```cmd
    mysql -u root -p

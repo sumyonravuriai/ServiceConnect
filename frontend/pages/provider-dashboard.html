@@ -121,6 +121,21 @@
         </div>
       </div>
 
+      <!-- Live Incoming Booking Alert Banner -->
+      <div id="liveIncomingJobBanner" style="display:none; background: linear-gradient(135deg, #1e3a8a, #2563eb); color: white; padding: 1.15rem 1.35rem; border-radius: var(--radius-md); margin-bottom: 1.5rem; display: none; align-items: center; justify-content: space-between; box-shadow: 0 8px 20px rgba(37,99,235,0.28); animation: pulse-ring 2.5s infinite;">
+        <div style="display: flex; align-items: center; gap: 0.85rem;">
+          <div style="font-size: 1.6rem; background: rgba(255,255,255,0.2); width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">⚡</div>
+          <div>
+            <div style="font-weight: 800; font-size: var(--font-size-sm); letter-spacing: 0.02em;">🔔 NEW LIVE JOB REQUEST RECEIVED!</div>
+            <div style="font-size: var(--font-size-xs); opacity: 0.9;" id="incomingJobDetailsText">Customer requested service in your neighborhood.</div>
+          </div>
+        </div>
+        <div style="display: flex; gap: 0.5rem;">
+          <button class="btn btn-sm" style="background: #ffffff; color: var(--color-primary); font-weight: 700;" onclick="dismissIncomingBanner(true)">Review Request</button>
+          <button class="btn btn-sm" style="background: transparent; color: #ffffff; border: 1px solid rgba(255,255,255,0.4);" onclick="dismissIncomingBanner(false)">Dismiss</button>
+        </div>
+      </div>
+
       <!-- SECTION: Job Requests Table -->
       <div id="sectionRequests">
         <!-- Segmented Filter Tabs -->
@@ -230,6 +245,22 @@
     </main>
   </div>
 
+  <!-- Provider Job Details & In-App Coordination Modal -->
+  <div class="modal-backdrop" id="providerJobModal">
+    <div class="modal-card" style="max-width: 680px; width: 92%; max-height: 90vh; overflow-y: auto;">
+      <div class="modal-header">
+        <h3 class="modal-title">Job Management & Customer Coordination</h3>
+        <span class="modal-close-btn" onclick="closeProviderJobModal()">✕</span>
+      </div>
+      <div class="modal-body" id="providerJobModalBody">
+        <!-- Injected via JS -->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" onclick="closeProviderJobModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
   <script src="../js/api.js"></script>
   <script src="../js/auth.js"></script>
   <script src="../js/main.js"></script>
@@ -237,6 +268,7 @@
     let providerJobs = [];
     let pFilter = 'ALL';
     let currentProviderInfo = null;
+    let activeJobIdForChat = null;
 
     async function initProviderDashboard() {
       let user = Auth.getUser();
@@ -256,6 +288,38 @@
       }
 
       await loadProviderBookings();
+
+      // Subscribe to live SSE events for incoming jobs & customer chat messages
+      Api.subscribeToLiveNotifications(user.id, handleProviderNotification);
+    }
+
+    function handleProviderNotification(eventType, data) {
+      if (eventType === 'NEW_BOOKING_REQUEST') {
+        const banner = document.getElementById('liveIncomingJobBanner');
+        const text = document.getElementById('incomingJobDetailsText');
+        text.textContent = `${data.customerName || 'Customer'} requested ${data.timeSlot || 'an appointment'} (${data.address || 'Local address'}) - Fee: ₹${data.price || 350}`;
+        banner.style.display = 'flex';
+        showToast(`⚡ New Booking Request: Ref ${data.bookingReference}!`, 'info');
+        loadProviderBookings();
+      } else if (eventType === 'CHAT_MESSAGE') {
+        if (activeJobIdForChat && Number(data.bookingId) === Number(activeJobIdForChat)) {
+          loadProviderChatMessages(activeJobIdForChat);
+        } else {
+          showToast(`💬 Client message (${data.senderName}): "${data.message}"`, 'info');
+        }
+      } else if (eventType === 'BOOKING_UPDATE') {
+        loadProviderBookings();
+        if (activeJobIdForChat) {
+          openProviderJobModal(activeJobIdForChat);
+        }
+      }
+    }
+
+    function dismissIncomingBanner(review) {
+      document.getElementById('liveIncomingJobBanner').style.display = 'none';
+      if (review && providerJobs.length > 0) {
+        openProviderJobModal(providerJobs[0].id);
+      }
     }
 
     async function loadProviderBookings() {
@@ -319,6 +383,8 @@
             <td><strong>${formatCurrency(b.price)}</strong></td>
             <td style="text-align: right;">
               <div class="action-group" style="justify-content: flex-end;">
+                <button class="btn btn-outline btn-sm" onclick="openProviderJobModal(${b.id})">💬 Chat & Stepper</button>
+
                 ${b.status === 'PENDING' ? `
                   <button class="btn btn-primary btn-sm" onclick="updateJobStatus(${b.id}, 'ACCEPTED')">Accept</button>
                   <button class="btn btn-danger btn-sm" onclick="updateJobStatus(${b.id}, 'REJECTED')">Reject</button>
@@ -355,9 +421,132 @@
       if (res && res.success) {
         showToast(`Job status updated to ${status.replace('_', ' ')}`, 'success');
         await loadProviderBookings();
+        if (activeJobIdForChat && Number(activeJobIdForChat) === Number(bookingId)) {
+          openProviderJobModal(bookingId);
+        }
       } else {
         showToast('Failed to update status', 'error');
       }
+    }
+
+    function openProviderJobModal(id) {
+      const b = providerJobs.find(x => x.id === id);
+      if (!b) return;
+      activeJobIdForChat = id;
+
+      // Calculate progress stepper states
+      let s1 = 'completed', s2 = '', s3 = '', s4 = '', progress = '15%';
+      if (b.status === 'ACCEPTED') {
+        s2 = 'active';
+        progress = '50%';
+      } else if (b.status === 'IN_PROGRESS') {
+        s2 = 'completed';
+        s3 = 'active';
+        progress = '75%';
+      } else if (b.status === 'COMPLETED') {
+        s2 = 'completed';
+        s3 = 'completed';
+        s4 = 'completed';
+        progress = '100%';
+      } else if (b.status === 'PENDING') {
+        s1 = 'active';
+        progress = '15%';
+      }
+
+      document.getElementById('providerJobModalBody').innerHTML = `
+        <!-- Live Progress Stepper -->
+        <div class="booking-stepper">
+          <div class="stepper-progress-bar"><div class="stepper-progress-fill" style="width: ${progress};"></div></div>
+          <div class="step-item ${s1}"><div class="step-circle">1</div><div class="step-label">Requested</div></div>
+          <div class="step-item ${s2}"><div class="step-circle">2</div><div class="step-label">Accepted</div></div>
+          <div class="step-item ${s3}"><div class="step-circle">3</div><div class="step-label">In Progress</div></div>
+          <div class="step-item ${s4}"><div class="step-circle">4</div><div class="step-label">Completed</div></div>
+        </div>
+
+        <div class="summary-card" style="margin-bottom: 1rem;">
+          <div class="summary-row"><span class="summary-label">Booking Reference</span><span class="summary-value">${b.reference}</span></div>
+          <div class="summary-row"><span class="summary-label">Client Name</span><span class="summary-value">${b.customerName} (${b.customerPhone})</span></div>
+          <div class="summary-row"><span class="summary-label">Service Task</span><span class="summary-value">${b.serviceName}</span></div>
+          <div class="summary-row"><span class="summary-label">Appointment Time</span><span class="summary-value">${b.bookingDate} at ${b.timeSlot}</span></div>
+          <div class="summary-row"><span class="summary-label">Doorstep Location</span><span class="summary-value">${b.address}</span></div>
+          <div class="summary-row"><span class="summary-label">Customer Problem</span><span class="summary-value">${b.problemDescription || 'None provided'}</span></div>
+          <div class="summary-row"><span class="summary-label">Current Status</span><span class="summary-value"><strong>${b.status.replace('_', ' ')}</strong></span></div>
+          <div class="summary-row"><span class="summary-label">Remittance Fee</span><span class="summary-value">${formatCurrency(b.price)}</span></div>
+        </div>
+
+        <!-- Quick Status Workflow Progression Actions -->
+        <div style="display: flex; gap: 0.65rem; margin-bottom: 1.25rem; flex-wrap: wrap;">
+          ${b.status === 'PENDING' ? `
+            <button class="btn btn-primary btn-sm" onclick="updateJobStatus(${b.id}, 'ACCEPTED')">✓ Accept Request</button>
+            <button class="btn btn-danger btn-sm" onclick="updateJobStatus(${b.id}, 'REJECTED')">✕ Reject</button>
+          ` : ''}
+          ${b.status === 'ACCEPTED' ? `
+            <button class="btn btn-accent btn-sm" onclick="updateJobStatus(${b.id}, 'IN_PROGRESS')">🚀 Start Job / En Route</button>
+          ` : ''}
+          ${b.status === 'IN_PROGRESS' ? `
+            <button class="btn btn-primary btn-sm" style="background-color: var(--status-completed);" onclick="updateJobStatus(${b.id}, 'COMPLETED')">✓ Complete Job & Generate Invoice</button>
+          ` : ''}
+        </div>
+
+        <!-- Real-Time Direct In-App Chat With Customer -->
+        <div class="chat-container">
+          <div class="chat-header">
+            <span class="chat-header-title"><span class="live-indicator"></span> Direct Chat with ${b.customerName}</span>
+            <small style="color: var(--color-text-muted); font-size: 0.7rem;">Live Customer Coordination</small>
+          </div>
+          <div class="chat-messages" id="providerChatMessagesList">
+            <div style="text-align: center; color: var(--color-text-muted); font-size: 0.75rem; padding: 1rem;">Connecting to customer...</div>
+          </div>
+          <div class="chat-input-bar">
+            <input type="text" id="providerChatInput" placeholder="Send an update (e.g. Arriving in 15 mins)..." onkeydown="if(event.key==='Enter') sendProviderChatMessage(${b.id})">
+            <button class="btn btn-primary btn-sm" onclick="sendProviderChatMessage(${b.id})">Send</button>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('providerJobModal').classList.add('active');
+      loadProviderChatMessages(id);
+    }
+
+    async function loadProviderChatMessages(bookingId) {
+      const container = document.getElementById('providerChatMessagesList');
+      if (!container) return;
+
+      const user = Auth.getUser() || { id: 2 };
+      const res = await Api.getChatMessages(bookingId);
+      if (res && res.data) {
+        if (res.data.length === 0) {
+          container.innerHTML = `<div style="text-align: center; color: var(--color-text-muted); font-size: 0.75rem; padding: 1.5rem;">No messages yet. Send a quick arrival update to your customer!</div>`;
+          return;
+        }
+        container.innerHTML = res.data.map(m => {
+          const isMine = (Number(m.senderId) === Number(user.id));
+          return `
+            <div class="chat-bubble ${isMine ? 'mine' : 'theirs'}">
+              <div class="chat-sender">${m.senderName}</div>
+              <div>${m.message}</div>
+              <div class="chat-time">${m.createdAt || 'Just now'}</div>
+            </div>
+          `;
+        }).join('');
+        container.scrollTop = container.scrollHeight;
+      }
+    }
+
+    async function sendProviderChatMessage(bookingId) {
+      const input = document.getElementById('providerChatInput');
+      if (!input || !input.value.trim()) return;
+      const text = input.value.trim();
+      input.value = '';
+
+      const user = Auth.getUser() || { id: 2, fullName: 'Rajesh Sharma' };
+      await Api.sendChatMessage(bookingId, user.id, user.fullName || 'Provider', text);
+      await loadProviderChatMessages(bookingId);
+    }
+
+    function closeProviderJobModal() {
+      document.getElementById('providerJobModal').classList.remove('active');
+      activeJobIdForChat = null;
     }
 
     function filterProviderJobs(status, el) {

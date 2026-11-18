@@ -196,18 +196,35 @@
     </div>
   </div>
 
-  <!-- Booking Details Modal -->
+  <!-- Booking Details Modal with Real-Time Stepper & In-App Coordination Chat -->
   <div class="modal-backdrop" id="detailsModal">
-    <div class="modal-card">
+    <div class="modal-card" style="max-width: 680px; width: 92%; max-height: 90vh; overflow-y: auto;">
       <div class="modal-header">
-        <h3 class="modal-title">Booking Details</h3>
+        <h3 class="modal-title" id="detailsModalTitle">Booking Status & Coordination</h3>
         <span class="modal-close-btn" onclick="closeDetailsModal()">✕</span>
       </div>
       <div class="modal-body" id="detailsModalBody">
-        <!-- Injected via JS -->
+        <!-- Injected dynamically with Stepper, Details, and Chat -->
       </div>
-      <div class="modal-footer">
+      <div class="modal-footer" id="detailsModalFooter">
         <button type="button" class="btn btn-outline" onclick="closeDetailsModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Commercial Tax Invoice Modal -->
+  <div class="modal-backdrop" id="invoiceModal">
+    <div class="modal-card" style="max-width: 780px; width: 94%; max-height: 92vh; overflow-y: auto;">
+      <div class="modal-header no-print">
+        <h3 class="modal-title">Official Commercial Tax Invoice</h3>
+        <span class="modal-close-btn" onclick="closeInvoiceModal()">✕</span>
+      </div>
+      <div class="modal-body" id="invoiceModalBody">
+        <!-- Injected dynamically for printing -->
+      </div>
+      <div class="modal-footer no-print">
+        <button type="button" class="btn btn-outline" onclick="closeInvoiceModal()">Close</button>
+        <button type="button" class="btn btn-primary" onclick="window.print()">🖨️ Print / Save as PDF</button>
       </div>
     </div>
   </div>
@@ -220,6 +237,7 @@
     let currentFilter = 'ALL';
     let currentReviewBooking = null;
     let selectedRating = 5;
+    let activeBookingIdForChat = null;
 
     async function initDashboard() {
       let user = Auth.getUser();
@@ -235,6 +253,25 @@
       await loadFavourites();
       await loadAddresses();
       initStarRating();
+
+      // Subscribe to real-time events via Server-Sent Events (SSE)
+      Api.subscribeToLiveNotifications(user.id, handleLiveNotification);
+    }
+
+    function handleLiveNotification(eventType, data) {
+      if (eventType === 'BOOKING_UPDATE') {
+        showToast(`⚡ Booking ${data.bookingReference} status updated to: ${data.status}`, 'info');
+        loadBookings();
+        if (activeBookingIdForChat) {
+          viewBookingDetails(activeBookingIdForChat);
+        }
+      } else if (eventType === 'CHAT_MESSAGE') {
+        if (activeBookingIdForChat && Number(data.bookingId) === Number(activeBookingIdForChat)) {
+          loadChatMessages(activeBookingIdForChat);
+        } else {
+          showToast(`💬 New message from ${data.senderName}: "${data.message}"`, 'info');
+        }
+      }
     }
 
     async function loadBookings() {
@@ -350,24 +387,214 @@
     function viewBookingDetails(id) {
       const b = allBookings.find(x => x.id === id);
       if (!b) return;
+      activeBookingIdForChat = id;
+
+      // Calculate progress stepper states
+      let s1 = 'completed', s2 = '', s3 = '', s4 = '', progress = '15%';
+      if (b.status === 'ACCEPTED') {
+        s2 = 'active';
+        progress = '50%';
+      } else if (b.status === 'IN_PROGRESS') {
+        s2 = 'completed';
+        s3 = 'active';
+        progress = '75%';
+      } else if (b.status === 'COMPLETED') {
+        s2 = 'completed';
+        s3 = 'completed';
+        s4 = 'completed';
+        progress = '100%';
+      } else if (b.status === 'PENDING') {
+        s1 = 'active';
+        progress = '15%';
+      }
+
+      const isCancelled = (b.status === 'CANCELLED' || b.status === 'REJECTED');
 
       document.getElementById('detailsModalBody').innerHTML = `
-        <div class="summary-card" style="margin-bottom: 0;">
+        ${isCancelled ? `
+          <div style="background-color: #fee2e2; color: #b91c1c; padding: 0.85rem 1rem; border-radius: var(--radius-md); font-size: var(--font-size-xs); font-weight: 600; margin-bottom: 1rem; border: 1px solid #fca5a5;">
+            ⚠️ This appointment was ${b.status.toLowerCase()}. No further actions are required.
+          </div>
+        ` : `
+          <!-- Visual 4-Step Live Tracker -->
+          <div class="booking-stepper">
+            <div class="stepper-progress-bar"><div class="stepper-progress-fill" style="width: ${progress};"></div></div>
+            <div class="step-item ${s1}"><div class="step-circle">1</div><div class="step-label">Requested</div></div>
+            <div class="step-item ${s2}"><div class="step-circle">2</div><div class="step-label">Confirmed</div></div>
+            <div class="step-item ${s3}"><div class="step-circle">3</div><div class="step-label">In Progress</div></div>
+            <div class="step-item ${s4}"><div class="step-circle">4</div><div class="step-label">Completed</div></div>
+          </div>
+        `}
+
+        <div class="summary-card" style="margin-bottom: 1rem;">
           <div class="summary-row"><span class="summary-label">Reference ID</span><span class="summary-value">${b.reference}</span></div>
           <div class="summary-row"><span class="summary-label">Specialist</span><span class="summary-value">${b.providerName} (${b.providerBusiness})</span></div>
           <div class="summary-row"><span class="summary-label">Service</span><span class="summary-value">${b.serviceName}</span></div>
           <div class="summary-row"><span class="summary-label">Scheduled For</span><span class="summary-value">${b.bookingDate} at ${b.timeSlot}</span></div>
-          <div class="summary-row"><span class="summary-label">Address</span><span class="summary-value">${b.address}</span></div>
+          <div class="summary-row"><span class="summary-label">Doorstep Address</span><span class="summary-value">${b.address}</span></div>
           <div class="summary-row"><span class="summary-label">Problem Notes</span><span class="summary-value">${b.problemDescription || 'None provided'}</span></div>
-          <div class="summary-row"><span class="summary-label">Status</span><span class="summary-value">${b.status}</span></div>
+          <div class="summary-row"><span class="summary-label">Status</span><span class="summary-value">${b.status.replace('_', ' ')}</span></div>
           <div class="summary-row"><span class="summary-label">Total Fee</span><span class="summary-value">${formatCurrency(b.price)}</span></div>
         </div>
+
+        <div style="display: flex; gap: 0.75rem; margin-bottom: 1rem; flex-wrap: wrap;">
+          ${b.status === 'COMPLETED' ? `
+            <button class="btn btn-outline btn-sm" onclick="openInvoiceModal(${b.id})" style="border-color: var(--color-primary); color: var(--color-primary); font-weight: 600;">
+              📄 View & Print Tax Invoice
+            </button>
+          ` : ''}
+        </div>
+
+        <!-- Real-Time In-App Coordination Chat -->
+        <div class="chat-container">
+          <div class="chat-header">
+            <span class="chat-header-title"><span class="live-indicator"></span> Live Chat with ${b.providerName}</span>
+            <small style="color: var(--color-text-muted); font-size: 0.7rem;">Direct Technician Dispatch Channel</small>
+          </div>
+          <div class="chat-messages" id="customerChatMessagesList">
+            <div style="text-align: center; color: var(--color-text-muted); font-size: 0.75rem; padding: 1rem;">Connecting to direct secure chat...</div>
+          </div>
+          <div class="chat-input-bar">
+            <input type="text" id="customerChatInput" placeholder="Message ${b.providerName} (e.g. Landmark, timing)..." onkeydown="if(event.key==='Enter') sendCustomerChatMessage(${b.id})">
+            <button class="btn btn-primary btn-sm" onclick="sendCustomerChatMessage(${b.id})">Send</button>
+          </div>
+        </div>
       `;
+
       document.getElementById('detailsModal').classList.add('active');
+      loadChatMessages(id);
+    }
+
+    async function loadChatMessages(bookingId) {
+      const container = document.getElementById('customerChatMessagesList');
+      if (!container) return;
+
+      const user = Auth.getUser() || { id: 1 };
+      const res = await Api.getChatMessages(bookingId);
+      if (res && res.data) {
+        if (res.data.length === 0) {
+          container.innerHTML = `<div style="text-align: center; color: var(--color-text-muted); font-size: 0.75rem; padding: 1.5rem;">No messages yet. Send a direct note to your provider!</div>`;
+          return;
+        }
+        container.innerHTML = res.data.map(m => {
+          const isMine = (Number(m.senderId) === Number(user.id));
+          return `
+            <div class="chat-bubble ${isMine ? 'mine' : 'theirs'}">
+              <div class="chat-sender">${m.senderName}</div>
+              <div>${m.message}</div>
+              <div class="chat-time">${m.createdAt || 'Just now'}</div>
+            </div>
+          `;
+        }).join('');
+        container.scrollTop = container.scrollHeight;
+      }
+    }
+
+    async function sendCustomerChatMessage(bookingId) {
+      const input = document.getElementById('customerChatInput');
+      if (!input || !input.value.trim()) return;
+      const text = input.value.trim();
+      input.value = '';
+
+      const user = Auth.getUser() || { id: 1, fullName: 'Anita Desai' };
+      await Api.sendChatMessage(bookingId, user.id, user.fullName || 'Customer', text);
+      await loadChatMessages(bookingId);
     }
 
     function closeDetailsModal() {
       document.getElementById('detailsModal').classList.remove('active');
+      activeBookingIdForChat = null;
+    }
+
+    function openInvoiceModal(bookingId) {
+      const b = allBookings.find(x => x.id === bookingId);
+      if (!b) return;
+
+      const basePrice = Math.round(b.price / 1.18);
+      const gst = Math.round(b.price - basePrice);
+      const cgst = (gst / 2).toFixed(2);
+      const sgst = (gst / 2).toFixed(2);
+
+      document.getElementById('invoiceModalBody').innerHTML = `
+        <div class="invoice-card" id="invoicePrintContainer">
+          <div class="invoice-header">
+            <div class="invoice-brand">
+              <h2>ServiceConnect</h2>
+              <p style="color: var(--color-text-muted); font-size: 0.75rem;">Platform Technologies Ltd.<br>GSTIN: 27AABCS1429B1Z8</p>
+            </div>
+            <div style="text-align: right; font-size: 0.75rem;">
+              <strong style="font-size: 0.95rem; color: var(--color-primary);">TAX INVOICE</strong><br>
+              Invoice No: <strong>INV-${b.reference}</strong><br>
+              Date: <strong>${b.bookingDate}</strong>
+            </div>
+          </div>
+
+          <div class="invoice-meta-grid">
+            <div>
+              <div style="font-weight: 700; color: var(--color-primary); margin-bottom: 0.25rem;">BILLED TO (CUSTOMER):</div>
+              <strong>${b.customerName}</strong><br>
+              Phone: ${b.customerPhone}<br>
+              Address: ${b.address}
+            </div>
+            <div>
+              <div style="font-weight: 700; color: var(--color-primary); margin-bottom: 0.25rem;">SERVICE PROVIDER:</div>
+              <strong>${b.providerName}</strong><br>
+              ${b.providerBusiness}<br>
+              Booking Reference: ${b.reference}
+            </div>
+          </div>
+
+          <table class="invoice-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Service Description</th>
+                <th>Scheduled Slot</th>
+                <th style="text-align: right;">Amount (INR)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>1</td>
+                <td><strong>${b.serviceName}</strong><br><small style="color: var(--color-text-muted);">${b.problemDescription || 'Standard Doorstep Service'}</small></td>
+                <td>${b.bookingDate} (${b.timeSlot})</td>
+                <td style="text-align: right;">₹${basePrice}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="invoice-summary">
+            <table class="invoice-summary-table">
+              <tr>
+                <td>Subtotal</td>
+                <td style="text-align: right;">₹${basePrice}</td>
+              </tr>
+              <tr>
+                <td>CGST (9%)</td>
+                <td style="text-align: right;">₹${cgst}</td>
+              </tr>
+              <tr>
+                <td>SGST (9%)</td>
+                <td style="text-align: right;">₹${sgst}</td>
+              </tr>
+              <tr class="total-row">
+                <td>Total Paid</td>
+                <td style="text-align: right;">₹${b.price}</td>
+              </tr>
+            </table>
+          </div>
+
+          <div style="border-top: 1px dashed #cbd5e1; padding-top: 1rem; font-size: 0.7rem; color: var(--color-text-muted); text-align: center;">
+            Thank you for choosing ServiceConnect! This is an electronically generated valid commercial invoice.
+          </div>
+        </div>
+      `;
+
+      document.getElementById('invoiceModal').classList.add('active');
+    }
+
+    function closeInvoiceModal() {
+      document.getElementById('invoiceModal').classList.remove('active');
     }
 
     function openReviewModal(bookingId) {

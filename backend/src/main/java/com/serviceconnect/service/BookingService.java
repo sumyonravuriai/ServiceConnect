@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 @Service
@@ -23,11 +24,13 @@ public class BookingService {
     private final BookingDao bookingDao;
     private final ProviderDao providerDao;
     private final ReviewDao reviewDao;
+    private final NotificationService notificationService;
 
-    public BookingService(BookingDao bookingDao, ProviderDao providerDao, ReviewDao reviewDao) {
+    public BookingService(BookingDao bookingDao, ProviderDao providerDao, ReviewDao reviewDao, NotificationService notificationService) {
         this.bookingDao = bookingDao;
         this.providerDao = providerDao;
         this.reviewDao = reviewDao;
+        this.notificationService = notificationService;
     }
 
     @Transactional
@@ -64,7 +67,24 @@ public class BookingService {
         b.setPrice(price);
 
         Long bookingId = bookingDao.create(b);
-        return bookingDao.findById(bookingId).orElse(b);
+        Booking created = bookingDao.findById(bookingId).orElse(b);
+
+        // Notify provider in real time about incoming booking request
+        try {
+            notificationService.sendNotification(prov.getUserId(), "NEW_BOOKING_REQUEST", Map.of(
+                    "bookingReference", reference,
+                    "customerName", b.getCustomerName(),
+                    "customerPhone", b.getCustomerPhone(),
+                    "bookingDate", b.getBookingDate().toString(),
+                    "timeSlot", b.getTimeSlot(),
+                    "price", b.getPrice(),
+                    "address", b.getCustomerAddress()
+            ));
+        } catch (Exception e) {
+            // Log but don't fail booking creation
+        }
+
+        return created;
     }
 
     public Booking getById(Long id) {
@@ -114,7 +134,18 @@ public class BookingService {
         }
 
         bookingDao.updateStatus(bookingId, target, reason);
-        return getById(bookingId);
+        Booking updated = getById(bookingId);
+
+        // Real-time broadcast to both customer and provider
+        try {
+            ProviderProfile prov = providerDao.findById(updated.getProviderId()).orElse(null);
+            Long providerUserId = prov != null ? prov.getUserId() : null;
+            notificationService.broadcastBookingStatus(updated.getCustomerId(), providerUserId, updated.getBookingReference(), target, reason);
+        } catch (Exception e) {
+            // Non-blocking notification dispatch
+        }
+
+        return updated;
     }
 
     @Transactional

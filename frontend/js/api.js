@@ -308,7 +308,78 @@ const Api = {
       { id: 2, userId: 1, label: 'Office', addressLine1: 'Suite 305, Tech Hub Tower', city: 'Metro Core', postalCode: '500081', isDefault: false }
     ],
 
+    chatMessages: [
+      { id: 1, bookingId: 1, senderId: 1, senderName: 'Anita Desai', message: 'Hello Rajesh, can you arrive around 11:15 AM?', createdAt: '2026-11-20 09:15' },
+      { id: 2, bookingId: 1, senderId: 2, senderName: 'Rajesh Sharma', message: 'Sure Anita! I am on the way with replacement fuses and multimeter.', createdAt: '2026-11-20 09:20' }
+    ],
+
     favourites: [1, 3]
+  },
+
+  // -------------------------------------------------------------
+  // Real-Time Event Stream (SSE) Integration
+  // -------------------------------------------------------------
+  eventSource: null,
+  subscribers: [],
+
+  subscribeToLiveNotifications(userId, callback) {
+    if (callback) this.subscribers.push(callback);
+    if (this.eventSource) return;
+
+    if (window.EventSource) {
+      try {
+        const sseUrl = `${API_BASE_URL}/notifications/subscribe/${userId || 1}`;
+        this.eventSource = new EventSource(sseUrl);
+
+        this.eventSource.addEventListener('CONNECTED', (e) => {
+          console.log('⚡ SSE Connected:', e.data);
+        });
+
+        this.eventSource.addEventListener('BOOKING_UPDATE', (e) => {
+          const payload = JSON.parse(e.data);
+          this.notifySubscribers('BOOKING_UPDATE', payload);
+        });
+
+        this.eventSource.addEventListener('NEW_BOOKING_REQUEST', (e) => {
+          const payload = JSON.parse(e.data);
+          this.notifySubscribers('NEW_BOOKING_REQUEST', payload);
+        });
+
+        this.eventSource.addEventListener('CHAT_MESSAGE', (e) => {
+          const payload = JSON.parse(e.data);
+          this.notifySubscribers('CHAT_MESSAGE', payload);
+        });
+
+        this.eventSource.onerror = () => {
+          if (this.eventSource) {
+            this.eventSource.close();
+            this.eventSource = null;
+          }
+        };
+      } catch (e) {
+        console.warn('EventSource initialization failed:', e);
+      }
+    }
+  },
+
+  notifySubscribers(eventType, data) {
+    this.subscribers.forEach(cb => {
+      try { cb(eventType, data); } catch (err) { console.error(err); }
+    });
+    window.dispatchEvent(new CustomEvent('serviceconnect:notification', { detail: { eventType, data } }));
+  },
+
+  async getChatMessages(bookingId) {
+    return this.request(`/chat/booking/${bookingId}`);
+  },
+
+  async sendChatMessage(bookingId, senderId, senderName, message) {
+    const res = await this.request(`/chat/booking/${bookingId}`, {
+      method: 'POST',
+      body: JSON.stringify({ senderId, senderName, message })
+    });
+    this.notifySubscribers('CHAT_MESSAGE', { bookingId, senderId, senderName, message, timestamp: Date.now() });
+    return res;
   },
 
   // Fallback Mock API Handler
@@ -425,6 +496,29 @@ const Api = {
         provider.reviewsCount += 1;
       }
       return { success: true, message: 'Review submitted successfully' };
+    }
+
+    // Real-Time Chat - Messages List
+    if (path.startsWith('/chat/booking/') && method === 'GET') {
+      const bId = Number(path.split('/')[3]);
+      const list = this.mockData.chatMessages.filter(m => m.bookingId === bId);
+      return { success: true, data: list };
+    }
+
+    // Real-Time Chat - Send Message
+    if (path.startsWith('/chat/booking/') && method === 'POST') {
+      const bId = Number(path.split('/')[3]);
+      const body = JSON.parse(options.body || '{}');
+      const newMsg = {
+        id: Date.now(),
+        bookingId: bId,
+        senderId: body.senderId || 1,
+        senderName: body.senderName || 'Anonymous',
+        message: body.message || '',
+        createdAt: new Date().toISOString().replace('T', ' ').slice(0, 16)
+      };
+      this.mockData.chatMessages.push(newMsg);
+      return { success: true, data: newMsg };
     }
 
     // Customer Addresses

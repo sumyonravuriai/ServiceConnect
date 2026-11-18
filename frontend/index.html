@@ -72,14 +72,15 @@
           </datalist>
         </div>
 
-        <div class="search-field">
+        <div class="search-field" style="position: relative;">
           <span class="search-field-icon">
             <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
               <circle cx="12" cy="10" r="3"></circle>
             </svg>
           </span>
-          <input type="text" id="searchLocation" placeholder="Enter city or area (e.g. Downtown, Westside)">
+          <input type="text" id="searchLocation" placeholder="Enter city or area (e.g. Downtown, Westside)" style="padding-right: 80px;">
+          <button type="button" class="btn-location-detect" onclick="detectUserLocation('searchLocation')">📍 GPS</button>
         </div>
 
         <button type="submit" class="btn btn-primary search-btn btn-lg">Search Providers</button>
