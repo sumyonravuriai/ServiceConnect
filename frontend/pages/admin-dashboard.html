@@ -16,12 +16,17 @@
   <header class="navbar">
     <div class="container nav-container">
       <a href="../index.html" class="brand-logo">
-        <div class="brand-icon">⚡</div>
-        <div class="brand-text">Service<span>Connect</span> <span style="font-size: var(--font-size-xs); color: var(--color-accent); font-weight: 700; border: 1px solid var(--color-accent); padding: 0.1rem 0.4rem; border-radius: var(--radius-sm);">ADMIN</span></div>
+        <div class="brand-icon">
+          <svg viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+          </svg>
+        </div>
+        <div class="brand-text">Service<span>Connect</span> <span style="font-size: var(--font-size-2xs); background: var(--color-surface-alt); border: 1px solid var(--color-border); color: var(--color-accent); font-weight: 800; padding: 0.15rem 0.5rem; border-radius: var(--radius-sm); vertical-align: middle;">ADMIN</span></div>
       </a>
 
       <nav class="nav-menu">
-        <a href="../index.html" class="nav-link">Main Site</a>
+        <a href="../index.html" class="nav-link">Main Website</a>
         <a href="categories.html" class="nav-link">Categories</a>
         <a href="providers.html" class="nav-link">Providers</a>
         <div class="nav-actions"></div>
@@ -35,7 +40,7 @@
     <!-- Sidebar -->
     <aside class="dashboard-sidebar">
       <div class="sidebar-user">
-        <div class="sidebar-avatar" style="background-color: var(--status-progress-bg); color: var(--status-progress);">A</div>
+        <div class="sidebar-avatar" style="background-color: var(--status-progress-bg); color: var(--status-progress); border-color: var(--status-progress-border);">A</div>
         <div class="sidebar-user-info">
           <h4>Admin Portal</h4>
           <span class="sidebar-user-role">System Administrator</span>
@@ -75,7 +80,7 @@
       <div class="dashboard-header">
         <div class="dashboard-title-box">
           <h1>System Control & Analytics</h1>
-          <p>Monitor platform performance, verify local service businesses and moderate transactions.</p>
+          <p>Monitor platform performance, verify local businesses and audit transactions.</p>
         </div>
         <div>
           <button class="btn btn-outline btn-sm" onclick="showToast('Database connection healthy: MySQL 8.0', 'success')">DB Status: Connected</button>
@@ -107,7 +112,7 @@
         </div>
         <div class="stat-card">
           <div class="stat-info">
-            <div class="stat-label">Pending Verifications</div>
+            <div class="stat-label">Pending Approvals</div>
             <div class="stat-value" id="admApprovals" style="color: var(--status-pending);">4</div>
           </div>
           <div class="stat-icon" style="color: var(--status-pending);">⏳</div>
@@ -116,7 +121,7 @@
 
       <!-- SECTION: Overview (Recent Bookings & Quick Actions) -->
       <div id="admSectionOverview">
-        <h3 style="font-size: var(--font-size-lg); font-weight: 700; margin-bottom: 1.25rem;">Recent Platform Activity</h3>
+        <h3 style="font-size: var(--font-size-lg); font-weight: 800; margin-bottom: 1.25rem;">Recent Platform Transactions</h3>
         <div class="table-responsive">
           <table class="data-table">
             <thead>
@@ -139,7 +144,7 @@
 
       <!-- SECTION: Pending Provider Approvals -->
       <div id="admSectionApprovals" style="display: none;">
-        <h3 style="font-size: var(--font-size-lg); font-weight: 700; margin-bottom: 1rem;">Provider Registration Approvals</h3>
+        <h3 style="font-size: var(--font-size-lg); font-weight: 800; margin-bottom: 0.5rem;">Provider Registration Approvals</h3>
         <p style="font-size: var(--font-size-sm); color: var(--color-text-muted); margin-bottom: 1.5rem;">Review and verify business credentials before activating provider profiles on search results.</p>
 
         <div class="table-responsive">
@@ -187,10 +192,10 @@
 
       <!-- SECTION: Service Categories Management -->
       <div id="admSectionCategories" style="display: none;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 0.5rem;">
           <div>
-            <h3 style="font-size: var(--font-size-lg); font-weight: 700;">Service Categories Directory</h3>
-            <p style="font-size: var(--font-size-sm); color: var(--color-text-muted);">Manage categories, descriptions and active display states.</p>
+            <h3 style="font-size: var(--font-size-lg); font-weight: 800;">Service Categories Directory</h3>
+            <p style="font-size: var(--font-size-xs); color: var(--color-text-muted);">Manage categories, slugs and active catalog states</p>
           </div>
           <button class="btn btn-primary btn-sm" onclick="openAddCategoryModal()">+ Add New Category</button>
         </div>
@@ -216,7 +221,7 @@
 
       <!-- SECTION: User Accounts -->
       <div id="admSectionUsers" style="display: none;">
-        <h3 style="font-size: var(--font-size-lg); font-weight: 700; margin-bottom: 1.5rem;">Manage User Accounts</h3>
+        <h3 style="font-size: var(--font-size-lg); font-weight: 800; margin-bottom: 1.5rem;">Manage User Accounts</h3>
         <div class="table-responsive">
           <table class="data-table">
             <thead>
@@ -267,7 +272,7 @@
 
       <!-- SECTION: All Bookings -->
       <div id="admSectionAllBookings" style="display: none;">
-        <h3 style="font-size: var(--font-size-lg); font-weight: 700; margin-bottom: 1.5rem;">All Platform Transactions</h3>
+        <h3 style="font-size: var(--font-size-lg); font-weight: 800; margin-bottom: 1.5rem;">All Platform Transactions</h3>
         <div class="table-responsive">
           <table class="data-table">
             <thead>
@@ -296,7 +301,6 @@
   <script src="../js/main.js"></script>
   <script>
     async function initAdminDashboard() {
-      // Mock login as admin if not logged in
       let user = Auth.getUser();
       if (!user || user.role !== 'ADMIN') {
         user = { id: 99, email: 'admin@serviceconnect.com', fullName: 'System Admin', role: 'ADMIN' };
@@ -359,9 +363,9 @@
         const tbody = document.getElementById('admCategoriesTableBody');
         tbody.innerHTML = res.data.map(c => `
           <tr>
-            <td style="font-size: 1.5rem;">${c.icon}</td>
+            <td style="font-size: 1.35rem; width: 40px;">${c.icon}</td>
             <td><strong>${c.name}</strong></td>
-            <td><code>${c.slug}</code></td>
+            <td><code style="font-size: var(--font-size-xs); background: var(--color-surface-alt); padding: 0.2rem 0.4rem; border-radius: 4px;">${c.slug}</code></td>
             <td style="color: var(--color-text-muted); font-size: var(--font-size-xs);">${c.description}</td>
             <td><span class="badge badge-completed">Active</span></td>
             <td style="text-align: right;">

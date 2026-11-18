@@ -8,6 +8,42 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../css/styles.css">
+  <style>
+    /* Category Filter Chips Bar */
+    .filter-chips-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      overflow-x: auto;
+      padding: 0.75rem 0 1rem 0;
+      scrollbar-width: thin;
+    }
+    .filter-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.45rem 1rem;
+      border-radius: var(--radius-full);
+      background-color: var(--color-surface);
+      border: 1px solid var(--color-border);
+      font-size: var(--font-size-xs);
+      font-weight: 600;
+      color: var(--color-text-secondary);
+      white-space: nowrap;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+    .filter-chip:hover {
+      border-color: var(--color-accent);
+      color: var(--color-accent);
+      background-color: var(--color-accent-soft);
+    }
+    .filter-chip.active {
+      background-color: var(--color-primary);
+      border-color: var(--color-primary);
+      color: #ffffff;
+    }
+  </style>
 </head>
 <body>
 
@@ -15,7 +51,12 @@
   <header class="navbar">
     <div class="container nav-container">
       <a href="../index.html" class="brand-logo">
-        <div class="brand-icon">⚡</div>
+        <div class="brand-icon">
+          <svg viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+          </svg>
+        </div>
         <div class="brand-text">Service<span>Connect</span></div>
       </a>
 
@@ -32,14 +73,16 @@
   </header>
 
   <!-- Filter & Search Toolbar -->
-  <div style="background-color: var(--color-surface); border-bottom: 1px solid var(--color-border); padding: 1.75rem 0;">
+  <div style="background-color: var(--color-surface); border-bottom: 1px solid var(--color-border); padding: 1.5rem 0 0.5rem 0;">
     <div class="container">
       <form id="filterForm" class="search-box-card" style="box-shadow: none; border-color: var(--color-border);">
         <!-- Service Category -->
         <div class="search-field" style="flex: 1 1 180px;">
-          <span class="search-field-icon">⚡</span>
+          <span class="search-field-icon">
+            <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+          </span>
           <select id="filterCategory">
-            <option value="">All Service Categories</option>
+            <option value="">All Categories</option>
             <option value="Electrician">Electrician</option>
             <option value="Plumber">Plumber</option>
             <option value="Mechanic">Mechanic</option>
@@ -54,43 +97,61 @@
 
         <!-- Location -->
         <div class="search-field" style="flex: 1 1 160px;">
-          <span class="search-field-icon">📍</span>
-          <input type="text" id="filterLocation" placeholder="City / Area">
+          <span class="search-field-icon">
+            <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+          </span>
+          <input type="text" id="filterLocation" placeholder="City or locality...">
         </div>
 
         <!-- Rating Filter -->
         <div class="search-field" style="flex: 1 1 130px;">
-          <span class="search-field-icon">⭐</span>
+          <span class="search-field-icon">
+            <svg viewBox="0 0 24 24" fill="#f59e0b" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+          </span>
           <select id="filterRating">
             <option value="">Any Rating</option>
-            <option value="4.5">4.5 & above</option>
-            <option value="4.0">4.0 & above</option>
-            <option value="3.5">3.5 & above</option>
+            <option value="4.5">★ 4.5 & above</option>
+            <option value="4.0">★ 4.0 & above</option>
+            <option value="3.5">★ 3.5 & above</option>
           </select>
         </div>
 
         <!-- Sort Option -->
         <div class="search-field" style="flex: 1 1 150px;">
-          <span class="search-field-icon">↕️</span>
+          <span class="search-field-icon">
+            <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>
+          </span>
           <select id="sortBy">
-            <option value="rating_desc">Highest Rated</option>
+            <option value="rating_desc">Top Rated</option>
             <option value="price_asc">Price: Low to High</option>
             <option value="price_desc">Price: High to Low</option>
           </select>
         </div>
 
-        <button type="submit" class="btn btn-primary">Filter Results</button>
+        <button type="submit" class="btn btn-primary">Filter</button>
         <button type="button" id="resetBtn" class="btn btn-outline">Reset</button>
       </form>
+
+      <!-- Quick Category Chips -->
+      <div class="filter-chips-bar" id="categoryChipsBar">
+        <button type="button" class="filter-chip active" onclick="selectChipCategory('')">All Services</button>
+        <button type="button" class="filter-chip" onclick="selectChipCategory('Electrician')">⚡ Electrician</button>
+        <button type="button" class="filter-chip" onclick="selectChipCategory('Plumber')">🔧 Plumber</button>
+        <button type="button" class="filter-chip" onclick="selectChipCategory('AC Repair')">❄️ AC Repair</button>
+        <button type="button" class="filter-chip" onclick="selectChipCategory('Cleaner')">🧹 Cleaner</button>
+        <button type="button" class="filter-chip" onclick="selectChipCategory('Carpenter')">🪚 Carpenter</button>
+        <button type="button" class="filter-chip" onclick="selectChipCategory('Mechanic')">🚗 Mechanic</button>
+        <button type="button" class="filter-chip" onclick="selectChipCategory('Cooking Services')">🍳 Cooking</button>
+      </div>
     </div>
   </div>
 
   <!-- Main Listing -->
   <main class="section">
     <div class="container">
-      <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 1.5rem;">
-        <h2 id="resultsCountHeading" style="font-size: var(--font-size-xl); font-weight: 700; color: var(--color-primary);">Available Service Providers</h2>
-        <span id="activeFilterSummary" style="font-size: var(--font-size-xs); color: var(--color-text-muted);"></span>
+      <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 0.5rem;">
+        <h2 id="resultsCountHeading" style="font-size: var(--font-size-xl); font-weight: 800; color: var(--color-primary);">Available Service Specialists</h2>
+        <span style="font-size: var(--font-size-xs); color: var(--color-text-muted);">Instant booking with upfront pricing</span>
       </div>
 
       <div class="provider-grid" id="providersList">
@@ -113,13 +174,33 @@
   <script src="../js/auth.js"></script>
   <script src="../js/main.js"></script>
   <script>
-    // Read URL query params on load
     const urlParams = new URLSearchParams(window.location.search);
     const initialCategory = urlParams.get('category') || '';
     const initialCity = urlParams.get('city') || '';
 
-    if (initialCategory) document.getElementById('filterCategory').value = initialCategory;
+    if (initialCategory) {
+      document.getElementById('filterCategory').value = initialCategory;
+      updateActiveChip(initialCategory);
+    }
     if (initialCity) document.getElementById('filterLocation').value = initialCity;
+
+    function selectChipCategory(cat) {
+      document.getElementById('filterCategory').value = cat;
+      updateActiveChip(cat);
+      fetchAndRenderProviders();
+    }
+
+    function updateActiveChip(cat) {
+      document.querySelectorAll('.filter-chip').forEach(btn => {
+        if (!cat && btn.textContent.includes('All Services')) {
+          btn.classList.add('active');
+        } else if (cat && btn.textContent.toLowerCase().includes(cat.toLowerCase())) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+    }
 
     async function fetchAndRenderProviders() {
       const category = document.getElementById('filterCategory').value;
@@ -138,12 +219,14 @@
       const countHeading = document.getElementById('resultsCountHeading');
 
       if (!res || !res.data || res.data.length === 0) {
-        countHeading.textContent = `0 Providers Found`;
+        countHeading.textContent = `0 Specialists Found`;
         container.innerHTML = `
-          <div class="empty-state" style="grid-column: 1/-1;">
-            <div class="empty-state-icon">🔍</div>
-            <h3>No matching service providers found</h3>
-            <p>Try broadening your search criteria or resetting filters.</p>
+          <div class="card" style="grid-column: 1/-1; text-align: center; padding: 4rem 1.5rem; border: 2px dashed var(--color-border);">
+            <div style="font-size: 2.5rem; color: var(--color-text-light); margin-bottom: 1rem;">🔍</div>
+            <h3 style="font-size: var(--font-size-lg); font-weight: 700; color: var(--color-primary); margin-bottom: 0.5rem;">No matching service specialists found</h3>
+            <p style="font-size: var(--font-size-sm); color: var(--color-text-muted); max-width: 420px; margin: 0 auto 1.5rem auto;">
+              Try clearing filters or searching across another city or neighborhood.
+            </p>
             <button class="btn btn-outline" onclick="resetFilters()">Reset All Filters</button>
           </div>
         `;
@@ -155,11 +238,14 @@
       container.innerHTML = res.data.map(p => `
         <div class="provider-card">
           <div class="provider-header">
-            <img src="${p.avatar}" alt="${p.name}" class="provider-avatar">
+            <div class="avatar-wrapper">
+              <img src="${p.avatar}" alt="${p.name}" class="provider-avatar">
+              <span class="status-dot" title="Available"></span>
+            </div>
             <div class="provider-info">
               <div class="provider-name">
                 ${p.name}
-                ${p.isVerified ? '<span class="badge badge-verified" title="Identity and background verified">✓ Verified</span>' : ''}
+                ${p.isVerified ? '<span class="badge badge-verified">✓ Verified</span>' : ''}
               </div>
               <div class="provider-category">${p.category} • ${p.businessName}</div>
               <div class="provider-meta">
@@ -171,11 +257,16 @@
 
           <div class="provider-body">
             <p class="provider-bio">${p.bio}</p>
-            <div style="font-size: var(--font-size-xs); color: var(--color-text-muted); margin-bottom: 0.75rem;">
-              <span>📍 Service Area: <strong>${p.serviceArea}</strong></span>
+            <div style="font-size: var(--font-size-xs); color: var(--color-text-secondary); margin-bottom: 0.85rem; display: flex; align-items: center; gap: 0.35rem;">
+              <span>📍 Coverage:</span>
+              <strong>${p.serviceArea}</strong>
+            </div>
+            <div class="provider-tags">
+              <span class="tag-badge">Background Verified</span>
+              <span class="tag-badge">Doorstep Service</span>
             </div>
             <div class="provider-pricing-row">
-              <span class="price-label">Starting Rate</span>
+              <span class="price-label">Consultation starting at</span>
               <span class="price-val">${formatCurrency(p.startingPrice)}</span>
             </div>
           </div>
@@ -193,11 +284,13 @@
       document.getElementById('filterLocation').value = '';
       document.getElementById('filterRating').value = '';
       document.getElementById('sortBy').value = 'rating_desc';
+      updateActiveChip('');
       fetchAndRenderProviders();
     }
 
     document.getElementById('filterForm').addEventListener('submit', (e) => {
       e.preventDefault();
+      updateActiveChip(document.getElementById('filterCategory').value);
       fetchAndRenderProviders();
     });
 

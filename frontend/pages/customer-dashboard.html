@@ -16,7 +16,12 @@
   <header class="navbar">
     <div class="container nav-container">
       <a href="../index.html" class="brand-logo">
-        <div class="brand-icon">⚡</div>
+        <div class="brand-icon">
+          <svg viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+          </svg>
+        </div>
         <div class="brand-text">Service<span>Connect</span></div>
       </a>
 
@@ -71,7 +76,7 @@
       <div class="dashboard-header">
         <div class="dashboard-title-box">
           <h1>Customer Portal</h1>
-          <p id="welcomeGreeting">Welcome back! Manage your booked appointments and track technician status.</p>
+          <p id="welcomeGreeting">Track service appointments, dispatch updates and write verified reviews.</p>
         </div>
         <div>
           <a href="providers.html" class="btn btn-primary">+ Book New Appointment</a>
@@ -82,7 +87,7 @@
       <div class="stats-grid">
         <div class="stat-card">
           <div class="stat-info">
-            <div class="stat-label">Total Bookings</div>
+            <div class="stat-label">Total Appointments</div>
             <div class="stat-value" id="statTotalBookings">0</div>
           </div>
           <div class="stat-icon">📑</div>
@@ -90,14 +95,14 @@
         <div class="stat-card">
           <div class="stat-info">
             <div class="stat-label">Pending / Confirmed</div>
-            <div class="stat-value" id="statActiveBookings">0</div>
+            <div class="stat-value" id="statActiveBookings" style="color: var(--color-accent);">0</div>
           </div>
-          <div class="stat-icon" style="color: var(--status-accepted);">⏰</div>
+          <div class="stat-icon" style="color: var(--color-accent);">⏰</div>
         </div>
         <div class="stat-card">
           <div class="stat-info">
             <div class="stat-label">Completed Services</div>
-            <div class="stat-value" id="statCompletedBookings">0</div>
+            <div class="stat-value" id="statCompletedBookings" style="color: var(--status-completed);">0</div>
           </div>
           <div class="stat-icon" style="color: var(--status-completed);">✓</div>
         </div>
@@ -105,11 +110,11 @@
 
       <!-- SECTION: Bookings List -->
       <div id="sectionBookings">
-        <!-- Status Filter Tabs -->
+        <!-- Segmented Filter Tabs -->
         <div class="filter-tabs">
           <div class="filter-tab active" onclick="filterBookings('ALL', this)">All Appointments (<span id="countAll">0</span>)</div>
           <div class="filter-tab" onclick="filterBookings('PENDING', this)">Pending (<span id="countPending">0</span>)</div>
-          <div class="filter-tab" onclick="filterBookings('ACCEPTED', this)">Accepted / In-Progress (<span id="countAccepted">0</span>)</div>
+          <div class="filter-tab" onclick="filterBookings('ACCEPTED', this)">In Progress (<span id="countAccepted">0</span>)</div>
           <div class="filter-tab" onclick="filterBookings('COMPLETED', this)">Completed (<span id="countCompleted">0</span>)</div>
           <div class="filter-tab" onclick="filterBookings('CANCELLED', this)">Cancelled (<span id="countCancelled">0</span>)</div>
         </div>
@@ -121,11 +126,11 @@
               <tr>
                 <th>Booking Ref</th>
                 <th>Service Specialist</th>
-                <th>Service</th>
-                <th>Date & Time</th>
+                <th>Requested Service</th>
+                <th>Scheduled Date</th>
                 <th>Status</th>
-                <th>Amount</th>
-                <th style="text-align: right;">Actions</th>
+                <th>Fee</th>
+                <th style="text-align: right;">Action</th>
               </tr>
             </thead>
             <tbody id="bookingsTableBody">
@@ -137,7 +142,7 @@
 
       <!-- SECTION: Saved Favourites -->
       <div id="sectionFavourites" style="display: none;">
-        <h3 style="font-size: var(--font-size-lg); font-weight: 700; margin-bottom: 1.5rem;">Your Favourite Service Providers</h3>
+        <h3 style="font-size: var(--font-size-lg); font-weight: 800; margin-bottom: 1.5rem;">Your Favourite Service Providers</h3>
         <div class="provider-grid" id="favouritesContainer">
           <!-- Injected via JS -->
         </div>
@@ -146,7 +151,7 @@
       <!-- SECTION: Saved Addresses -->
       <div id="sectionAddresses" style="display: none;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-          <h3 style="font-size: var(--font-size-lg); font-weight: 700;">Saved Doorstep Addresses</h3>
+          <h3 style="font-size: var(--font-size-lg); font-weight: 800;">Saved Doorstep Addresses</h3>
           <button class="btn btn-outline btn-sm" onclick="openAddressModal()">+ Add New Address</button>
         </div>
         <div class="features-grid" id="addressesContainer">
@@ -165,7 +170,7 @@
         <span class="modal-close-btn" onclick="closeReviewModal()">✕</span>
       </div>
       <div class="modal-body">
-        <p id="reviewProviderName" style="font-size: var(--font-size-sm); color: var(--color-text-muted); margin-bottom: 1.25rem;"></p>
+        <p id="reviewProviderName" style="font-size: var(--font-size-sm); color: var(--color-text-muted); margin-bottom: 1.5rem;"></p>
         
         <div class="form-group" style="text-align: center;">
           <label class="form-label" style="margin-bottom: 0.75rem;">Your Rating</label>
@@ -181,7 +186,7 @@
 
         <div class="form-group">
           <label class="form-label" for="reviewComment">Written Review</label>
-          <textarea id="reviewComment" class="form-control" rows="4" placeholder="How was your experience? Was the technician punctual, professional and helpful?" required></textarea>
+          <textarea id="reviewComment" class="form-control" rows="4" placeholder="How was your experience? Was the technician punctual, skilled and courteous?" required></textarea>
         </div>
       </div>
       <div class="modal-footer">
@@ -216,9 +221,7 @@
     let currentReviewBooking = null;
     let selectedRating = 5;
 
-    // Initialize customer dashboard
     async function initDashboard() {
-      // Mock login as customer if not set
       let user = Auth.getUser();
       if (!user) {
         user = { id: 1, email: 'anita@example.com', fullName: 'Anita Desai', phone: '+91 98765 43210', role: 'CUSTOMER' };
@@ -288,7 +291,6 @@
         if (b.status === 'COMPLETED') badgeClass = 'badge-completed';
         if (b.status === 'CANCELLED' || b.status === 'REJECTED') badgeClass = 'badge-cancelled';
 
-        // Actions
         const canCancel = (b.status === 'PENDING' || b.status === 'ACCEPTED');
         const canReview = (b.status === 'COMPLETED' && !b.hasReviewed);
 
@@ -358,7 +360,7 @@
           <div class="summary-row"><span class="summary-label">Address</span><span class="summary-value">${b.address}</span></div>
           <div class="summary-row"><span class="summary-label">Problem Notes</span><span class="summary-value">${b.problemDescription || 'None provided'}</span></div>
           <div class="summary-row"><span class="summary-label">Status</span><span class="summary-value">${b.status}</span></div>
-          <div class="summary-row"><span class="summary-label">Total Amount</span><span class="summary-value">${formatCurrency(b.price)}</span></div>
+          <div class="summary-row"><span class="summary-label">Total Fee</span><span class="summary-value">${formatCurrency(b.price)}</span></div>
         </div>
       `;
       document.getElementById('detailsModal').classList.add('active');
@@ -368,7 +370,6 @@
       document.getElementById('detailsModal').classList.remove('active');
     }
 
-    // Review Modal Functions
     function openReviewModal(bookingId) {
       currentReviewBooking = allBookings.find(b => b.id === bookingId);
       if (!currentReviewBooking) return;
@@ -425,7 +426,7 @@
       });
 
       if (res && res.success) {
-        showToast('Thank you! Your review has been submitted.', 'success');
+        showToast('Thank you! Your verified review has been posted.', 'success');
         closeReviewModal();
         await loadBookings();
       } else {
@@ -433,7 +434,6 @@
       }
     }
 
-    // Load Favourites
     async function loadFavourites() {
       const favContainer = document.getElementById('favouritesContainer');
       const provRes = await Api.request('/providers');
@@ -442,7 +442,10 @@
         favContainer.innerHTML = favs.map(p => `
           <div class="provider-card">
             <div class="provider-header">
-              <img src="${p.avatar}" alt="${p.name}" class="provider-avatar">
+              <div class="avatar-wrapper">
+                <img src="${p.avatar}" alt="${p.name}" class="provider-avatar">
+                <span class="status-dot"></span>
+              </div>
               <div class="provider-info">
                 <div class="provider-name">${p.name}</div>
                 <div class="provider-category">${p.category}</div>
@@ -458,7 +461,6 @@
       }
     }
 
-    // Load Addresses
     async function loadAddresses() {
       const addContainer = document.getElementById('addressesContainer');
       const res = await Api.request('/customer/addresses');
@@ -476,7 +478,7 @@
     }
 
     function openAddressModal() {
-      showToast('Address management active. Saved to your profile.', 'info');
+      showToast('Address management active in profile settings.', 'info');
     }
 
     document.addEventListener('DOMContentLoaded', initDashboard);

@@ -15,7 +15,12 @@
   <header class="navbar">
     <div class="container nav-container">
       <a href="../index.html" class="brand-logo">
-        <div class="brand-icon">⚡</div>
+        <div class="brand-icon">
+          <svg viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+          </svg>
+        </div>
         <div class="brand-text">Service<span>Connect</span></div>
       </a>
       <a href="../index.html" class="btn btn-text btn-sm">← Back to Home</a>
@@ -23,10 +28,10 @@
   </header>
 
   <main style="flex: 1; display: flex; align-items: center; justify-content: center; padding: 3rem 1rem;">
-    <div class="card" style="width: 100%; max-width: 600px; padding: 2.5rem; box-shadow: var(--shadow-lg);">
+    <div class="card" style="width: 100%; max-width: 620px; padding: 2.75rem; box-shadow: var(--shadow-xl); border-radius: var(--radius-xl);">
       <div style="text-align: center; margin-bottom: 2rem;">
-        <span class="section-tag">Get Started</span>
-        <h1 style="font-size: var(--font-size-2xl); font-weight: 800; color: var(--color-primary); margin-top: 0.5rem;">Join ServiceConnect</h1>
+        <span class="section-tag" style="margin-bottom: 0.5rem;">Join Our Network</span>
+        <h1 style="font-size: var(--font-size-2xl); font-weight: 800; color: var(--color-primary); margin-top: 0.25rem;">Create Your Account</h1>
         <p style="font-size: var(--font-size-sm); color: var(--color-text-muted);">Choose your account type to register as a client or verified local professional.</p>
       </div>
 
@@ -66,7 +71,7 @@
         <!-- Customer Specific Fields -->
         <div id="customerExtraFields">
           <div class="form-group">
-            <label class="form-label" for="regAddress">Home / Delivery Address</label>
+            <label class="form-label" for="regAddress">Doorstep Address</label>
             <input type="text" id="regAddress" class="form-control" placeholder="House/Flat number, locality, city">
           </div>
         </div>
@@ -106,7 +111,7 @@
           </div>
 
           <div class="form-group">
-            <label class="form-label" for="regServiceAreas">Service Coverage Cities / Areas</label>
+            <label class="form-label" for="regServiceAreas">Service Coverage Cities / Neighborhoods</label>
             <input type="text" id="regServiceAreas" class="form-control" placeholder="e.g. Downtown, Westside, North Suburbs">
           </div>
 
@@ -120,7 +125,7 @@
       </form>
 
       <div style="text-align: center; margin-top: 1.5rem; font-size: var(--font-size-sm); color: var(--color-text-muted);">
-        Already have an account? <a href="login.html" style="color: var(--color-accent); font-weight: 600;">Sign in here</a>
+        Already have an account? <a href="login.html" style="color: var(--color-accent); font-weight: 700;">Sign in here</a>
       </div>
     </div>
   </main>
@@ -149,7 +154,6 @@
       }
     }
 
-    // Check URL query for initial role
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('role') === 'PROVIDER') {
       setRegisterRole('PROVIDER');

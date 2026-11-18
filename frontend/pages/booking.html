@@ -16,7 +16,12 @@
   <header class="navbar">
     <div class="container nav-container">
       <a href="../index.html" class="brand-logo">
-        <div class="brand-icon">⚡</div>
+        <div class="brand-icon">
+          <svg viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+          </svg>
+        </div>
         <div class="brand-text">Service<span>Connect</span></div>
       </a>
 
@@ -60,9 +65,9 @@
     <!-- Booking Multi-Step Form Card -->
     <div class="booking-card">
       <!-- Provider Snapshot Header -->
-      <div id="bookingProviderHeader" style="display: flex; align-items: center; justify-content: space-between; padding-bottom: 1.25rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--color-border); flex-wrap: wrap; gap: 1rem;">
-        <div style="display: flex; align-items: center; gap: 0.75rem;">
-          <img id="provThumb" src="" alt="Provider" style="width: 44px; height: 44px; border-radius: var(--radius-md); object-fit: cover;">
+      <div id="bookingProviderHeader" style="display: flex; align-items: center; justify-content: space-between; padding-bottom: 1.25rem; margin-bottom: 1.75rem; border-bottom: 1px solid var(--color-border); flex-wrap: wrap; gap: 1rem;">
+        <div style="display: flex; align-items: center; gap: 0.85rem;">
+          <img id="provThumb" src="" alt="Provider" style="width: 48px; height: 48px; border-radius: var(--radius-md); object-fit: cover; border: 1px solid var(--color-border);">
           <div>
             <h4 id="provName" style="font-size: var(--font-size-base); font-weight: 700; color: var(--color-primary);">Loading provider...</h4>
             <span id="provCategory" style="font-size: var(--font-size-xs); color: var(--color-accent); font-weight: 600;"></span>
@@ -75,7 +80,7 @@
       <div class="step-content active" id="step1">
         <div class="step-header">
           <h2>Step 1: Select Required Service</h2>
-          <p>Choose an itemized service option or standard consultation.</p>
+          <p>Choose an itemized service option or general consultation.</p>
         </div>
 
         <div class="service-options-list" id="servicesOptionsContainer">
@@ -84,7 +89,7 @@
 
         <div class="wizard-actions">
           <div></div>
-          <button type="button" class="btn btn-primary" onclick="goToStep(2)">Continue to Date →</button>
+          <button type="button" class="btn btn-primary btn-lg" onclick="goToStep(2)">Continue to Date →</button>
         </div>
       </div>
 
@@ -95,23 +100,23 @@
           <p>Select your preferred appointment date for service doorstep arrival.</p>
         </div>
 
-        <div class="form-group" style="max-width: 360px;">
+        <div class="form-group" style="max-width: 380px;">
           <label class="form-label" for="bookingDateInput">Service Date</label>
-          <input type="date" id="bookingDateInput" class="form-control" required>
-          <span class="form-hint">Appointments can be booked up to 14 days in advance.</span>
+          <input type="date" id="bookingDateInput" class="form-control" required style="padding: 0.85rem 1rem; font-size: 1rem;">
+          <span class="form-hint">Appointments can be scheduled up to 14 days in advance.</span>
         </div>
 
         <div class="wizard-actions">
           <button type="button" class="btn btn-outline" onclick="goToStep(1)">← Back</button>
-          <button type="button" class="btn btn-primary" onclick="validateDateAndProceed()">Continue to Slot →</button>
+          <button type="button" class="btn btn-primary btn-lg" onclick="validateDateAndProceed()">Continue to Slot →</button>
         </div>
       </div>
 
       <!-- STEP 3: Choose Time Slot -->
       <div class="step-content" id="step3">
         <div class="step-header">
-          <h2>Step 3: Choose Time Slot</h2>
-          <p>Pick an available time window. Reserved slots are disabled to prevent double-booking.</p>
+          <h2>Step 3: Choose Available Time Slot</h2>
+          <p>Pick a convenient arrival window. Reserved slots are disabled to prevent double-booking conflicts.</p>
         </div>
 
         <div id="timeSlotsContainer" class="slots-grid">
@@ -120,7 +125,7 @@
 
         <div class="wizard-actions">
           <button type="button" class="btn btn-outline" onclick="goToStep(2)">← Back</button>
-          <button type="button" class="btn btn-primary" onclick="validateSlotAndProceed()">Continue to Address →</button>
+          <button type="button" class="btn btn-primary btn-lg" onclick="validateSlotAndProceed()">Continue to Address →</button>
         </div>
       </div>
 
@@ -128,17 +133,18 @@
       <div class="step-content" id="step4">
         <div class="step-header">
           <h2>Step 4: Service Address & Details</h2>
-          <p>Provide your location and brief description of the issue.</p>
+          <p>Provide your doorstep delivery address and any issue notes.</p>
         </div>
 
-        <div class="form-group">
-          <label class="form-label" for="customerFullName">Contact Name</label>
-          <input type="text" id="customerFullName" class="form-control" placeholder="Full name for invoice and contact" required>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label" for="customerPhone">Phone Number</label>
-          <input type="tel" id="customerPhone" class="form-control" placeholder="Mobile number for SMS update and technician calls" required>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="customerFullName">Contact Name</label>
+            <input type="text" id="customerFullName" class="form-control" placeholder="Full name for invoice and contact" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="customerPhone">Phone Number</label>
+            <input type="tel" id="customerPhone" class="form-control" placeholder="Mobile number for technician updates" required>
+          </div>
         </div>
 
         <div class="form-group">
@@ -153,7 +159,7 @@
 
         <div class="wizard-actions">
           <button type="button" class="btn btn-outline" onclick="goToStep(3)">← Back</button>
-          <button type="button" class="btn btn-primary" onclick="validateAddressAndProceed()">Review Booking →</button>
+          <button type="button" class="btn btn-primary btn-lg" onclick="validateAddressAndProceed()">Review Booking →</button>
         </div>
       </div>
 
@@ -174,20 +180,20 @@
             <span class="summary-value" id="sumService"></span>
           </div>
           <div class="summary-row">
-            <span class="summary-label">Date & Time Slot</span>
+            <span class="summary-label">Scheduled For</span>
             <span class="summary-value" id="sumSlot"></span>
           </div>
           <div class="summary-row">
-            <span class="summary-label">Contact Customer</span>
+            <span class="summary-label">Customer Contact</span>
             <span class="summary-value" id="sumContact"></span>
           </div>
           <div class="summary-row">
-            <span class="summary-label">Service Address</span>
+            <span class="summary-label">Doorstep Address</span>
             <span class="summary-value" id="sumAddress"></span>
           </div>
           <div class="summary-row">
             <span class="summary-label">Total Estimated Fee</span>
-            <span class="summary-value" id="sumPrice" style="color: var(--color-accent); font-size: 1.25rem;"></span>
+            <span class="summary-value" id="sumPrice" style="color: var(--color-accent); font-size: 1.35rem;"></span>
           </div>
         </div>
 
@@ -201,12 +207,12 @@
       <div class="step-content" id="stepSuccess">
         <div class="booking-success-box">
           <div class="success-check-icon">✓</div>
-          <h2 style="font-size: var(--font-size-2xl); font-weight: 800; color: var(--color-primary); margin-bottom: 0.5rem;">Appointment Successfully Booked!</h2>
-          <p style="color: var(--color-text-muted); max-width: 500px; margin: 0 auto 1.5rem auto;">
+          <h2 style="font-size: var(--font-size-3xl); font-weight: 800; color: var(--color-primary); margin-bottom: 0.5rem;">Appointment Successfully Booked!</h2>
+          <p style="color: var(--color-text-muted); max-width: 520px; margin: 0 auto 1.5rem auto; line-height: 1.6;">
             Your request has been routed to the service specialist. You can track real-time status and technician updates in your Customer Dashboard.
           </p>
 
-          <div style="font-size: var(--font-size-xs); color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Your Booking Reference ID</div>
+          <div style="font-size: var(--font-size-xs); color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700;">Your Booking Reference ID</div>
           <div class="booking-ref-badge" id="confirmedRefBadge">SC-00000</div>
 
           <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; margin-top: 1rem;">
@@ -255,7 +261,6 @@
     };
 
     async function initBooking() {
-      // Set minimum date to tomorrow
       const today = new Date();
       today.setDate(today.getDate() + 1);
       const minDate = today.toISOString().split('T')[0];
@@ -264,14 +269,12 @@
       dateInput.value = minDate;
       selectedDate = minDate;
 
-      // Prefill customer if logged in
       const currentUser = Auth.getUser();
       if (currentUser) {
         document.getElementById('customerFullName').value = currentUser.fullName || '';
         document.getElementById('customerPhone').value = currentUser.phone || '';
       }
 
-      // Fetch Provider Details
       const res = await Api.request(`/providers/${providerId}`);
       if (!res || !res.data) {
         showToast('Provider not found', 'error');
@@ -279,16 +282,12 @@
       }
       currentProvider = res.data;
 
-      // Populate provider header
       document.getElementById('provThumb').src = currentProvider.avatar;
       document.getElementById('provName').textContent = currentProvider.name;
       document.getElementById('provCategory').textContent = `${currentProvider.category} • ${currentProvider.businessName}`;
       document.getElementById('provRating').innerHTML = `★ ${currentProvider.rating} (${currentProvider.reviewsCount})`;
 
-      // Populate Step 1 services
       renderServicesList();
-
-      // Populate Step 3 slots
       renderTimeSlots();
     }
 
@@ -329,9 +328,8 @@
       const slotsContainer = document.getElementById('timeSlotsContainer');
       const slots = currentProvider.availableSlots || ['09:00 AM', '11:00 AM', '02:00 PM', '04:30 PM', '06:00 PM'];
       
-      // Simulate double-booking prevention: mark one slot booked
       slotsContainer.innerHTML = slots.map((slot, index) => {
-        const isBooked = index === 2; // e.g. 02:00 PM reserved
+        const isBooked = index === 2; // e.g. 02:00 PM simulated booked
         return `
           <button type="button" class="time-slot-btn" ${isBooked ? 'disabled title="Slot already booked"' : ''} onclick="selectSlot('${slot}', this)">
             ${slot} ${isBooked ? '<br><small>(Booked)</small>' : ''}
@@ -396,7 +394,6 @@
       bookingState.address = address;
       bookingState.problemDescription = problem;
 
-      // Populate Step 5 Summary
       document.getElementById('sumProvider').textContent = `${currentProvider.name} (${currentProvider.businessName})`;
       document.getElementById('sumService').textContent = bookingState.serviceName;
       document.getElementById('sumSlot').textContent = `${bookingState.bookingDate} at ${bookingState.timeSlot}`;
@@ -424,11 +421,9 @@
         });
 
         if (res && res.success) {
-          // Hide wizard indicators
           document.querySelector('.wizard-progress').style.display = 'none';
           document.getElementById('bookingProviderHeader').style.display = 'none';
           
-          // Hide step 5, show stepSuccess
           document.getElementById('step5').classList.remove('active');
           const successStep = document.getElementById('stepSuccess');
           successStep.classList.add('active');

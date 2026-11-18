@@ -1,11 +1,11 @@
 /* ==========================================================================
-   ServiceConnect - Booking Flow & Wizard Styles
+   ServiceConnect - Enhanced Booking Flow & Wizard Styles
    ========================================================================== */
 
 .booking-wrapper {
-  max-width: 900px;
-  margin: 2.5rem auto 5rem auto;
-  padding: 0 1rem;
+  max-width: 880px;
+  margin: 3rem auto 6rem auto;
+  padding: 0 1.25rem;
 }
 
 /* Wizard Progress Header */
@@ -14,7 +14,7 @@
   align-items: center;
   justify-content: space-between;
   position: relative;
-  margin-bottom: 2.5rem;
+  margin-bottom: 2.75rem;
 }
 
 .wizard-progress::before {
@@ -37,28 +37,30 @@
   align-items: center;
   gap: 0.5rem;
   background-color: var(--color-bg);
-  padding: 0 0.5rem;
+  padding: 0 0.75rem;
 }
 
 .step-indicator {
-  width: 38px;
-  height: 38px;
+  width: 42px;
+  height: 42px;
   border-radius: var(--radius-full);
   background-color: var(--color-surface);
   border: 2px solid var(--color-border);
   color: var(--color-text-muted);
-  font-weight: 700;
+  font-weight: 800;
   font-size: var(--font-size-sm);
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all var(--transition-fast);
+  box-shadow: var(--shadow-xs);
 }
 
 .wizard-step.active .step-indicator {
   background-color: var(--color-accent);
   border-color: var(--color-accent);
   color: #ffffff;
+  box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.15);
 }
 
 .wizard-step.completed .step-indicator {
@@ -72,10 +74,12 @@
   font-weight: 600;
   color: var(--color-text-muted);
   text-align: center;
+  white-space: nowrap;
 }
 
 .wizard-step.active .step-label {
   color: var(--color-accent);
+  font-weight: 700;
 }
 
 .wizard-step.completed .step-label {
@@ -86,9 +90,9 @@
 .booking-card {
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
-  padding: 2.5rem;
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
+  padding: 2.75rem;
 }
 
 .step-content {
@@ -97,25 +101,26 @@
 
 .step-content.active {
   display: block;
-  animation: fadeIn 0.2s ease-in-out;
+  animation: fadeIn 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(6px); }
+  from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
 .step-header {
   margin-bottom: 2rem;
-  padding-bottom: 1rem;
+  padding-bottom: 1.25rem;
   border-bottom: 1px solid var(--color-border);
 }
 
 .step-header h2 {
-  font-size: var(--font-size-xl);
-  font-weight: 700;
+  font-size: var(--font-size-2xl);
+  font-weight: 800;
   color: var(--color-primary);
   margin-bottom: 0.35rem;
+  letter-spacing: -0.02em;
 }
 
 .step-header p {
@@ -127,7 +132,7 @@
 .service-options-list {
   display: flex;
   flex-direction: column;
-  gap: 0.85rem;
+  gap: 1rem;
   margin-bottom: 2rem;
 }
 
@@ -135,21 +140,24 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1.25rem 1.5rem;
+  padding: 1.35rem 1.6rem;
   border: 2px solid var(--color-border);
   border-radius: var(--radius-md);
   cursor: pointer;
   transition: all var(--transition-fast);
+  background-color: var(--color-surface);
 }
 
 .service-option-card:hover {
   border-color: var(--color-accent);
   background-color: #f0f9ff;
+  transform: translateY(-1px);
 }
 
 .service-option-card.selected {
   border-color: var(--color-accent);
   background-color: #f0f9ff;
+  box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.2);
 }
 
 .service-option-info h4 {
@@ -165,7 +173,7 @@
 }
 
 .service-option-price {
-  font-size: var(--font-size-lg);
+  font-size: var(--font-size-xl);
   font-weight: 800;
   color: var(--color-accent);
 }
@@ -173,13 +181,13 @@
 /* Date Picker / Slots Grid */
 .slots-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fill, minmax(135px, 1fr));
+  gap: 0.85rem;
   margin-top: 1rem;
 }
 
 .time-slot-btn {
-  padding: 0.75rem 0.5rem;
+  padding: 0.85rem 0.5rem;
   text-align: center;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
@@ -194,12 +202,14 @@
 .time-slot-btn:hover:not(:disabled) {
   border-color: var(--color-accent);
   color: var(--color-accent);
+  background-color: var(--color-accent-soft);
 }
 
 .time-slot-btn.selected {
   background-color: var(--color-accent);
   border-color: var(--color-accent);
   color: #ffffff;
+  box-shadow: var(--shadow-sm);
 }
 
 .time-slot-btn:disabled {
@@ -213,24 +223,25 @@
 /* Booking Review Summary Card */
 .summary-card {
   background-color: var(--color-surface-alt);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  padding: 1.5rem;
+  padding: 1.75rem;
   margin-bottom: 2rem;
 }
 
 .summary-row {
   display: flex;
   justify-content: space-between;
-  padding: 0.65rem 0;
+  padding: 0.75rem 0;
   border-bottom: 1px solid var(--color-border);
   font-size: var(--font-size-sm);
 }
 
 .summary-row:last-child {
   border-bottom: none;
-  padding-top: 1rem;
-  font-size: var(--font-size-base);
-  font-weight: 700;
+  padding-top: 1.25rem;
+  font-size: var(--font-size-lg);
+  font-weight: 800;
   color: var(--color-primary);
 }
 
@@ -249,7 +260,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: 2rem;
+  margin-top: 2.25rem;
   padding-top: 1.5rem;
   border-top: 1px solid var(--color-border);
 }
@@ -257,19 +268,20 @@
 /* Confirmation Screen */
 .booking-success-box {
   text-align: center;
-  padding: 2.5rem 1rem;
+  padding: 3rem 1.5rem;
 }
 
 .success-check-icon {
-  width: 72px;
-  height: 72px;
+  width: 76px;
+  height: 76px;
   background-color: var(--status-completed-bg);
+  border: 2px solid var(--status-completed-border);
   color: var(--status-completed);
   border-radius: var(--radius-full);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 2.25rem;
+  font-size: 2.5rem;
   margin: 0 auto 1.5rem auto;
 }
 
@@ -277,14 +289,14 @@
   display: inline-block;
   background-color: var(--color-surface-alt);
   border: 1px solid var(--color-border);
-  padding: 0.5rem 1rem;
+  padding: 0.6rem 1.25rem;
   border-radius: var(--radius-md);
-  font-family: monospace;
-  font-size: 1.25rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 1.4rem;
   font-weight: 800;
   color: var(--color-accent);
   letter-spacing: 0.05em;
-  margin: 1rem 0 1.5rem 0;
+  margin: 1.25rem 0 1.75rem 0;
 }
 
 @media (max-width: 600px) {

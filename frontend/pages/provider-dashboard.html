@@ -16,7 +16,12 @@
   <header class="navbar">
     <div class="container nav-container">
       <a href="../index.html" class="brand-logo">
-        <div class="brand-icon">⚡</div>
+        <div class="brand-icon">
+          <svg viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+          </svg>
+        </div>
         <div class="brand-text">Service<span>Connect</span></div>
       </a>
 
@@ -38,7 +43,7 @@
         <div class="sidebar-avatar" id="provAvatar">R</div>
         <div class="sidebar-user-info">
           <h4 id="provBusinessName">Sharma Spark Electricals</h4>
-          <span class="sidebar-user-role">Provider Portal (Verified)</span>
+          <span class="sidebar-user-role">Provider Control Panel</span>
         </div>
       </div>
 
@@ -75,7 +80,7 @@
       <div class="dashboard-header">
         <div class="dashboard-title-box">
           <h1>Provider Control Center</h1>
-          <p>Review customer requests, dispatch technicians and manage appointments.</p>
+          <p>Review customer appointments, dispatch technicians and track jobs.</p>
         </div>
         <div>
           <button class="btn btn-outline" onclick="showToast('Your availability is active and public', 'info')">
@@ -95,10 +100,10 @@
         </div>
         <div class="stat-card">
           <div class="stat-info">
-            <div class="stat-label">Accepted / In-Progress</div>
-            <div class="stat-value" id="statActiveJobs" style="color: var(--status-accepted);">0</div>
+            <div class="stat-label">Accepted / In Progress</div>
+            <div class="stat-value" id="statActiveJobs" style="color: var(--color-accent);">0</div>
           </div>
-          <div class="stat-icon" style="color: var(--status-accepted);">🚀</div>
+          <div class="stat-icon" style="color: var(--color-accent);">🚀</div>
         </div>
         <div class="stat-card">
           <div class="stat-info">
@@ -118,6 +123,7 @@
 
       <!-- SECTION: Job Requests Table -->
       <div id="sectionRequests">
+        <!-- Segmented Filter Tabs -->
         <div class="filter-tabs">
           <div class="filter-tab active" onclick="filterProviderJobs('ALL', this)">All Jobs (<span id="pCountAll">0</span>)</div>
           <div class="filter-tab" onclick="filterProviderJobs('PENDING', this)">New Requests (<span id="pCountPending">0</span>)</div>
@@ -130,10 +136,10 @@
             <thead>
               <tr>
                 <th>Booking Ref</th>
-                <th>Customer Info</th>
+                <th>Client Info</th>
                 <th>Requested Service</th>
                 <th>Date & Slot</th>
-                <th>Address & Notes</th>
+                <th>Doorstep Address</th>
                 <th>Status</th>
                 <th>Price</th>
                 <th style="text-align: right;">Action</th>
@@ -148,8 +154,11 @@
 
       <!-- SECTION: Services & Pricing Management -->
       <div id="sectionServices" style="display: none;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-          <h3 style="font-size: var(--font-size-lg); font-weight: 700;">Services Offered & Hourly / Task Rates</h3>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 0.5rem;">
+          <div>
+            <h3 style="font-size: var(--font-size-lg); font-weight: 800;">Services & Rates</h3>
+            <p style="font-size: var(--font-size-xs); color: var(--color-text-muted);">Manage your offered service tasks and customized pricing</p>
+          </div>
           <button class="btn btn-primary btn-sm" onclick="openAddServiceModal()">+ Add New Service</button>
         </div>
 
@@ -159,7 +168,7 @@
               <tr>
                 <th>Service Name</th>
                 <th>Estimated Duration</th>
-                <th>Standard Rate</th>
+                <th>Fixed Rate</th>
                 <th>Status</th>
                 <th style="text-align: right;">Actions</th>
               </tr>
@@ -173,8 +182,8 @@
 
       <!-- SECTION: Working Schedule & Availability -->
       <div id="sectionAvailability" style="display: none;">
-        <h3 style="font-size: var(--font-size-lg); font-weight: 700; margin-bottom: 1rem;">Working Hours & Weekly Schedule</h3>
-        <p style="font-size: var(--font-size-sm); color: var(--color-text-muted); margin-bottom: 1.5rem;">Configure your operating hours and appointment slot intervals.</p>
+        <h3 style="font-size: var(--font-size-lg); font-weight: 800; margin-bottom: 0.5rem;">Operating Hours & Weekly Shifts</h3>
+        <p style="font-size: var(--font-size-sm); color: var(--color-text-muted); margin-bottom: 1.5rem;">Configure your operating days and coverage radius.</p>
 
         <div class="card" style="max-width: 650px;">
           <div class="form-group">
@@ -202,7 +211,7 @@
           </div>
 
           <div class="form-group">
-            <label class="form-label">Service Coverage Radius / Neighborhoods</label>
+            <label class="form-label">Service Coverage Neighborhoods</label>
             <input type="text" class="form-control" value="Downtown, Westside, Metro Core">
           </div>
 
@@ -212,7 +221,7 @@
 
       <!-- SECTION: Client Reviews -->
       <div id="sectionReviews" style="display: none;">
-        <h3 style="font-size: var(--font-size-lg); font-weight: 700; margin-bottom: 1.5rem;">Verified Customer Ratings & Reviews</h3>
+        <h3 style="font-size: var(--font-size-lg); font-weight: 800; margin-bottom: 1.5rem;">Verified Client Ratings & Feedback</h3>
         <div id="provReviewsList" style="max-width: 800px;">
           <!-- Injected via JS -->
         </div>
@@ -230,7 +239,6 @@
     let currentProviderInfo = null;
 
     async function initProviderDashboard() {
-      // Mock login as provider if not set
       let user = Auth.getUser();
       if (!user || user.role !== 'PROVIDER') {
         user = { id: 2, email: 'rajesh@example.com', fullName: 'Rajesh Sharma', role: 'PROVIDER' };
@@ -253,7 +261,6 @@
     async function loadProviderBookings() {
       const res = await Api.request('/bookings');
       if (res && res.data) {
-        // Provider 1 jobs
         providerJobs = res.data;
         updateProviderCounts();
         renderJobsTable();
@@ -284,7 +291,7 @@
       else if (pFilter === 'COMPLETED') filtered = providerJobs.filter(b => b.status === 'COMPLETED');
 
       if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 3rem; color: var(--color-text-muted);">No booking requests found.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 3rem; color: var(--color-text-muted);">No booking requests found in this status.</td></tr>`;
         return;
       }
 
@@ -326,7 +333,7 @@
                 ` : ''}
 
                 ${b.status === 'COMPLETED' ? `
-                  <span style="font-size: var(--font-size-xs); color: var(--status-completed); font-weight: 600;">✓ Finished</span>
+                  <span style="font-size: var(--font-size-xs); color: var(--status-completed); font-weight: 700;">✓ Finished</span>
                 ` : ''}
 
                 ${b.status === 'CANCELLED' || b.status === 'REJECTED' ? `
@@ -398,13 +405,13 @@
             <span style="font-size: var(--font-size-xs); color: var(--color-text-muted);">${r.date}</span>
           </div>
           <div style="color: #f59e0b; margin-bottom: 0.5rem;">${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</div>
-          <p style="font-size: var(--font-size-sm); color: var(--color-text-main);">${r.comment}</p>
+          <p style="font-size: var(--font-size-sm); color: var(--color-text-main); line-height: 1.55;">${r.comment}</p>
         </div>
       `).join('');
     }
 
     function openAddServiceModal() {
-      showToast('Add service capability active.', 'info');
+      showToast('Add service configuration active.', 'info');
     }
 
     document.addEventListener('DOMContentLoaded', initProviderDashboard);
