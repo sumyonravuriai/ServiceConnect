@@ -315,7 +315,7 @@
       if (catRes && catRes.data) {
         const catContainer = document.getElementById('homeCategoriesGrid');
         catContainer.innerHTML = catRes.data.slice(0, 8).map(c => `
-          <a href="pages/providers.html?category=${encodeURIComponent(c.name)}" class="category-card">
+          <a href="pages/providers.html?category=${encodeURIComponent(c.name)}" class="category-card cat-${c.slug}">
             <div class="category-icon-box">
               ${getCategoryIcon(c.slug)}
             </div>

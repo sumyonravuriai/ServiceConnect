@@ -95,7 +95,7 @@
         return;
       }
       container.innerHTML = items.map(c => `
-        <a href="providers.html?category=${encodeURIComponent(c.name)}" class="category-card">
+        <a href="providers.html?category=${encodeURIComponent(c.name)}" class="category-card cat-${c.slug}">
           <div class="category-icon-box">
             ${getCategoryIcon(c.slug)}
           </div>
