@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Customer Dashboard – ServiceConnect</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/styles.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <header class="navbar">
+    <div class="container nav-container">
+      <a href="../index.html" class="brand-logo">
+        <div class="brand-icon">⚡</div>
+        <div class="brand-text">Service<span>Connect</span></div>
+      </a>
+
+      <nav class="nav-menu">
+        <a href="../index.html" class="nav-link">Home</a>
+        <a href="categories.html" class="nav-link">Explore Services</a>
+        <a href="providers.html" class="nav-link">Find Providers</a>
+        <div class="nav-actions"></div>
+      </nav>
+
+      <button class="mobile-menu-btn" aria-label="Toggle navigation">☰</button>
+    </div>
+  </header>
+
+  <div class="dashboard-layout">
+    <!-- Sidebar -->
+    <aside class="dashboard-sidebar">
+      <div class="sidebar-user">
+        <div class="sidebar-avatar" id="userAvatar">A</div>
+        <div class="sidebar-user-info">
+          <h4 id="userFullName">Anita Desai</h4>
+          <span class="sidebar-user-role">Customer Account</span>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a class="sidebar-link active" onclick="switchDashboardTab('bookings', this)">
+          <span class="sidebar-link-icon">📅</span>
+          <span>My Appointments</span>
+        </a>
+        <a class="sidebar-link" onclick="switchDashboardTab('favourites', this)">
+          <span class="sidebar-link-icon">❤️</span>
+          <span>Saved Favourites</span>
+        </a>
+        <a class="sidebar-link" onclick="switchDashboardTab('addresses', this)">
+          <span class="sidebar-link-icon">📍</span>
+          <span>Saved Addresses</span>
+        </a>
+        <a class="sidebar-link" href="providers.html">
+          <span class="sidebar-link-icon">🔍</span>
+          <span>Find New Service</span>
+        </a>
+        <a class="sidebar-link" onclick="Auth.logout()" style="color: var(--status-cancelled); margin-top: auto;">
+          <span class="sidebar-link-icon">🚪</span>
+          <span>Sign Out</span>
+        </a>
+      </nav>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="dashboard-main">
+      <div class="dashboard-header">
+        <div class="dashboard-title-box">
+          <h1>Customer Portal</h1>
+          <p id="welcomeGreeting">Welcome back! Manage your booked appointments and track technician status.</p>
+        </div>
+        <div>
+          <a href="providers.html" class="btn btn-primary">+ Book New Appointment</a>
+        </div>
+      </div>
+
+      <!-- Quick Metrics Grid -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-info">
+            <div class="stat-label">Total Bookings</div>
+            <div class="stat-value" id="statTotalBookings">0</div>
+          </div>
+          <div class="stat-icon">📑</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-info">
+            <div class="stat-label">Pending / Confirmed</div>
+            <div class="stat-value" id="statActiveBookings">0</div>
+          </div>
+          <div class="stat-icon" style="color: var(--status-accepted);">⏰</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-info">
+            <div class="stat-label">Completed Services</div>
+            <div class="stat-value" id="statCompletedBookings">0</div>
+          </div>
+          <div class="stat-icon" style="color: var(--status-completed);">✓</div>
+        </div>
+      </div>
+
+      <!-- SECTION: Bookings List -->
+      <div id="sectionBookings">
+        <!-- Status Filter Tabs -->
+        <div class="filter-tabs">
+          <div class="filter-tab active" onclick="filterBookings('ALL', this)">All Appointments (<span id="countAll">0</span>)</div>
+          <div class="filter-tab" onclick="filterBookings('PENDING', this)">Pending (<span id="countPending">0</span>)</div>
+          <div class="filter-tab" onclick="filterBookings('ACCEPTED', this)">Accepted / In-Progress (<span id="countAccepted">0</span>)</div>
+          <div class="filter-tab" onclick="filterBookings('COMPLETED', this)">Completed (<span id="countCompleted">0</span>)</div>
+          <div class="filter-tab" onclick="filterBookings('CANCELLED', this)">Cancelled (<span id="countCancelled">0</span>)</div>
+        </div>
+
+        <!-- Bookings Data Table -->
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Booking Ref</th>
+                <th>Service Specialist</th>
+                <th>Service</th>
+                <th>Date & Time</th>
+                <th>Status</th>
+                <th>Amount</th>
+                <th style="text-align: right;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="bookingsTableBody">
+              <!-- Injected via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- SECTION: Saved Favourites -->
+      <div id="sectionFavourites" style="display: none;">
+        <h3 style="font-size: var(--font-size-lg); font-weight: 700; margin-bottom: 1.5rem;">Your Favourite Service Providers</h3>
+        <div class="provider-grid" id="favouritesContainer">
+          <!-- Injected via JS -->
+        </div>
+      </div>
+
+      <!-- SECTION: Saved Addresses -->
+      <div id="sectionAddresses" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+          <h3 style="font-size: var(--font-size-lg); font-weight: 700;">Saved Doorstep Addresses</h3>
+          <button class="btn btn-outline btn-sm" onclick="openAddressModal()">+ Add New Address</button>
+        </div>
+        <div class="features-grid" id="addressesContainer">
+          <!-- Injected via JS -->
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Review Modal -->
+  <div class="modal-backdrop" id="reviewModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Rate & Review Completed Service</h3>
+        <span class="modal-close-btn" onclick="closeReviewModal()">✕</span>
+      </div>
+      <div class="modal-body">
+        <p id="reviewProviderName" style="font-size: var(--font-size-sm); color: var(--color-text-muted); margin-bottom: 1.25rem;"></p>
+        
+        <div class="form-group" style="text-align: center;">
+          <label class="form-label" style="margin-bottom: 0.75rem;">Your Rating</label>
+          <div class="star-rating-select" id="starRatingSelect">
+            <span class="star" data-rating="1">★</span>
+            <span class="star" data-rating="2">★</span>
+            <span class="star" data-rating="3">★</span>
+            <span class="star" data-rating="4">★</span>
+            <span class="star" data-rating="5">★</span>
+          </div>
+          <span class="form-hint" id="ratingTextDesc">Click to select rating (1 to 5 stars)</span>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="reviewComment">Written Review</label>
+          <textarea id="reviewComment" class="form-control" rows="4" placeholder="How was your experience? Was the technician punctual, professional and helpful?" required></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" onclick="closeReviewModal()">Cancel</button>
+        <button type="button" class="btn btn-accent" onclick="submitReview()">Submit Review</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Booking Details Modal -->
+  <div class="modal-backdrop" id="detailsModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Booking Details</h3>
+        <span class="modal-close-btn" onclick="closeDetailsModal()">✕</span>
+      </div>
+      <div class="modal-body" id="detailsModalBody">
+        <!-- Injected via JS -->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" onclick="closeDetailsModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../js/api.js"></script>
+  <script src="../js/auth.js"></script>
+  <script src="../js/main.js"></script>
+  <script>
+    let allBookings = [];
+    let currentFilter = 'ALL';
+    let currentReviewBooking = null;
+    let selectedRating = 5;
+
+    // Initialize customer dashboard
+    async function initDashboard() {
+      // Mock login as customer if not set
+      let user = Auth.getUser();
+      if (!user) {
+        user = { id: 1, email: 'anita@example.com', fullName: 'Anita Desai', phone: '+91 98765 43210', role: 'CUSTOMER' };
+        Auth.setUser(user);
+      }
+
+      document.getElementById('userFullName').textContent = user.fullName || user.email;
+      document.getElementById('userAvatar').textContent = (user.fullName || 'A').charAt(0).toUpperCase();
+
+      await loadBookings();
+      await loadFavourites();
+      await loadAddresses();
+      initStarRating();
+    }
+
+    async function loadBookings() {
+      const res = await Api.request('/bookings');
+      if (res && res.data) {
+        allBookings = res.data;
+        updateCountsAndStats();
+        renderBookingsTable();
+      }
+    }
+
+    function updateCountsAndStats() {
+      const total = allBookings.length;
+      const pending = allBookings.filter(b => b.status === 'PENDING').length;
+      const accepted = allBookings.filter(b => b.status === 'ACCEPTED' || b.status === 'IN_PROGRESS').length;
+      const completed = allBookings.filter(b => b.status === 'COMPLETED').length;
+      const cancelled = allBookings.filter(b => b.status === 'CANCELLED' || b.status === 'REJECTED').length;
+
+      document.getElementById('statTotalBookings').textContent = total;
+      document.getElementById('statActiveBookings').textContent = pending + accepted;
+      document.getElementById('statCompletedBookings').textContent = completed;
+
+      document.getElementById('countAll').textContent = total;
+      document.getElementById('countPending').textContent = pending;
+      document.getElementById('countAccepted').textContent = accepted;
+      document.getElementById('countCompleted').textContent = completed;
+      document.getElementById('countCancelled').textContent = cancelled;
+    }
+
+    function renderBookingsTable() {
+      const tbody = document.getElementById('bookingsTableBody');
+      let filtered = allBookings;
+
+      if (currentFilter === 'PENDING') filtered = allBookings.filter(b => b.status === 'PENDING');
+      else if (currentFilter === 'ACCEPTED') filtered = allBookings.filter(b => b.status === 'ACCEPTED' || b.status === 'IN_PROGRESS');
+      else if (currentFilter === 'COMPLETED') filtered = allBookings.filter(b => b.status === 'COMPLETED');
+      else if (currentFilter === 'CANCELLED') filtered = allBookings.filter(b => b.status === 'CANCELLED' || b.status === 'REJECTED');
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" style="text-align: center; padding: 3rem 1rem; color: var(--color-text-muted);">
+              No appointments found in this status.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(b => {
+        let badgeClass = 'badge-pending';
+        if (b.status === 'ACCEPTED') badgeClass = 'badge-accepted';
+        if (b.status === 'IN_PROGRESS') badgeClass = 'badge-progress';
+        if (b.status === 'COMPLETED') badgeClass = 'badge-completed';
+        if (b.status === 'CANCELLED' || b.status === 'REJECTED') badgeClass = 'badge-cancelled';
+
+        // Actions
+        const canCancel = (b.status === 'PENDING' || b.status === 'ACCEPTED');
+        const canReview = (b.status === 'COMPLETED' && !b.hasReviewed);
+
+        return `
+          <tr>
+            <td><span class="ref-tag">${b.reference}</span></td>
+            <td>
+              <strong>${b.providerName}</strong><br>
+              <small style="color: var(--color-text-muted);">${b.providerBusiness}</small>
+            </td>
+            <td>${b.serviceName}</td>
+            <td>${b.bookingDate}<br><small style="color: var(--color-text-muted);">${b.timeSlot}</small></td>
+            <td><span class="badge ${badgeClass}">${b.status.replace('_', ' ')}</span></td>
+            <td><strong>${formatCurrency(b.price)}</strong></td>
+            <td style="text-align: right;">
+              <div class="action-group" style="justify-content: flex-end;">
+                <button class="btn btn-outline btn-sm" onclick="viewBookingDetails(${b.id})">Details</button>
+                ${canCancel ? `<button class="btn btn-danger btn-sm" onclick="cancelBooking(${b.id})">Cancel</button>` : ''}
+                ${canReview ? `<button class="btn btn-accent btn-sm" onclick="openReviewModal(${b.id})">Write Review</button>` : ''}
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function filterBookings(status, el) {
+      currentFilter = status;
+      document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+      el.classList.add('active');
+      renderBookingsTable();
+    }
+
+    function switchDashboardTab(tab, el) {
+      document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
+      el.classList.add('active');
+
+      document.getElementById('sectionBookings').style.display = (tab === 'bookings') ? 'block' : 'none';
+      document.getElementById('sectionFavourites').style.display = (tab === 'favourites') ? 'block' : 'none';
+      document.getElementById('sectionAddresses').style.display = (tab === 'addresses') ? 'block' : 'none';
+    }
+
+    async function cancelBooking(id) {
+      if (!confirm('Are you sure you want to cancel this booking?')) return;
+      const res = await Api.request(`/bookings/${id}/status`, {
+        method: 'PUT',
+        body: JSON.stringify({ status: 'CANCELLED' })
+      });
+      if (res && res.success) {
+        showToast('Booking cancelled successfully', 'info');
+        await loadBookings();
+      } else {
+        showToast('Unable to cancel booking', 'error');
+      }
+    }
+
+    function viewBookingDetails(id) {
+      const b = allBookings.find(x => x.id === id);
+      if (!b) return;
+
+      document.getElementById('detailsModalBody').innerHTML = `
+        <div class="summary-card" style="margin-bottom: 0;">
+          <div class="summary-row"><span class="summary-label">Reference ID</span><span class="summary-value">${b.reference}</span></div>
+          <div class="summary-row"><span class="summary-label">Specialist</span><span class="summary-value">${b.providerName} (${b.providerBusiness})</span></div>
+          <div class="summary-row"><span class="summary-label">Service</span><span class="summary-value">${b.serviceName}</span></div>
+          <div class="summary-row"><span class="summary-label">Scheduled For</span><span class="summary-value">${b.bookingDate} at ${b.timeSlot}</span></div>
+          <div class="summary-row"><span class="summary-label">Address</span><span class="summary-value">${b.address}</span></div>
+          <div class="summary-row"><span class="summary-label">Problem Notes</span><span class="summary-value">${b.problemDescription || 'None provided'}</span></div>
+          <div class="summary-row"><span class="summary-label">Status</span><span class="summary-value">${b.status}</span></div>
+          <div class="summary-row"><span class="summary-label">Total Amount</span><span class="summary-value">${formatCurrency(b.price)}</span></div>
+        </div>
+      `;
+      document.getElementById('detailsModal').classList.add('active');
+    }
+
+    function closeDetailsModal() {
+      document.getElementById('detailsModal').classList.remove('active');
+    }
+
+    // Review Modal Functions
+    function openReviewModal(bookingId) {
+      currentReviewBooking = allBookings.find(b => b.id === bookingId);
+      if (!currentReviewBooking) return;
+
+      document.getElementById('reviewProviderName').textContent = `Reviewing: ${currentReviewBooking.providerName} for ${currentReviewBooking.serviceName}`;
+      document.getElementById('reviewComment').value = '';
+      setStarRating(5);
+      document.getElementById('reviewModal').classList.add('active');
+    }
+
+    function closeReviewModal() {
+      document.getElementById('reviewModal').classList.remove('active');
+      currentReviewBooking = null;
+    }
+
+    function initStarRating() {
+      const stars = document.querySelectorAll('#starRatingSelect .star');
+      stars.forEach(star => {
+        star.addEventListener('click', () => {
+          const rating = Number(star.getAttribute('data-rating'));
+          setStarRating(rating);
+        });
+      });
+      setStarRating(5);
+    }
+
+    function setStarRating(rating) {
+      selectedRating = rating;
+      const stars = document.querySelectorAll('#starRatingSelect .star');
+      stars.forEach(star => {
+        const r = Number(star.getAttribute('data-rating'));
+        if (r <= rating) star.classList.add('selected');
+        else star.classList.remove('selected');
+      });
+      document.getElementById('ratingTextDesc').textContent = `${rating} of 5 Stars`;
+    }
+
+    async function submitReview() {
+      const comment = document.getElementById('reviewComment').value.trim();
+      if (!comment) {
+        showToast('Please enter your review feedback', 'error');
+        return;
+      }
+
+      const res = await Api.request('/reviews', {
+        method: 'POST',
+        body: JSON.stringify({
+          bookingId: currentReviewBooking.id,
+          providerId: currentReviewBooking.providerId,
+          rating: selectedRating,
+          comment: comment,
+          customerName: Auth.getUser() ? Auth.getUser().fullName : 'Anita Desai'
+        })
+      });
+
+      if (res && res.success) {
+        showToast('Thank you! Your review has been submitted.', 'success');
+        closeReviewModal();
+        await loadBookings();
+      } else {
+        showToast('Failed to submit review', 'error');
+      }
+    }
+
+    // Load Favourites
+    async function loadFavourites() {
+      const favContainer = document.getElementById('favouritesContainer');
+      const provRes = await Api.request('/providers');
+      if (provRes && provRes.data) {
+        const favs = provRes.data.slice(0, 2);
+        favContainer.innerHTML = favs.map(p => `
+          <div class="provider-card">
+            <div class="provider-header">
+              <img src="${p.avatar}" alt="${p.name}" class="provider-avatar">
+              <div class="provider-info">
+                <div class="provider-name">${p.name}</div>
+                <div class="provider-category">${p.category}</div>
+                <div class="provider-meta"><span class="rating-pill">★ ${p.rating}</span></div>
+              </div>
+            </div>
+            <div class="provider-footer-actions">
+              <a href="provider-profile.html?id=${p.id}" class="btn btn-outline btn-sm">View Profile</a>
+              <a href="booking.html?providerId=${p.id}" class="btn btn-primary btn-sm">Book Again</a>
+            </div>
+          </div>
+        `).join('');
+      }
+    }
+
+    // Load Addresses
+    async function loadAddresses() {
+      const addContainer = document.getElementById('addressesContainer');
+      const res = await Api.request('/customer/addresses');
+      if (res && res.data) {
+        addContainer.innerHTML = res.data.map(a => `
+          <div class="feature-box">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+              <h4 style="font-size: var(--font-size-base); font-weight: 700;">${a.label}</h4>
+              ${a.isDefault ? '<span class="badge badge-completed">Default</span>' : ''}
+            </div>
+            <p style="font-size: var(--font-size-sm); color: var(--color-text-muted);">${a.addressLine1}, ${a.city} - ${a.postalCode}</p>
+          </div>
+        `).join('');
+      }
+    }
+
+    function openAddressModal() {
+      showToast('Address management active. Saved to your profile.', 'info');
+    }
+
+    document.addEventListener('DOMContentLoaded', initDashboard);
+  </script>
+</body>
+</html>

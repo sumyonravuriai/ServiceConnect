@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ServiceConnect – Local Service Provider Discovery & Booking Platform</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <header class="navbar">
+    <div class="container nav-container">
+      <a href="index.html" class="brand-logo">
+        <div class="brand-icon">⚡</div>
+        <div class="brand-text">Service<span>Connect</span></div>
+      </a>
+
+      <nav class="nav-menu">
+        <a href="index.html" class="nav-link active">Home</a>
+        <a href="pages/categories.html" class="nav-link">Explore Services</a>
+        <a href="pages/providers.html" class="nav-link">Find Providers</a>
+        <a href="pages/register.html?role=PROVIDER" class="nav-link">Become a Provider</a>
+        <div class="nav-actions">
+          <!-- Auth buttons dynamically rendered by auth.js -->
+        </div>
+      </nav>
+
+      <button class="mobile-menu-btn" aria-label="Toggle navigation">☰</button>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="container hero-inner">
+      <span class="hero-tagline">Find • Compare • Book • Relax</span>
+      <h1 class="hero-title">Find Trusted <span>Local Professionals</span> Near You</h1>
+      <p class="hero-subtitle">Connect with verified electricians, plumbers, cleaners, technicians and tutors in your neighborhood with upfront transparent pricing.</p>
+
+      <!-- Prominent Search Bar -->
+      <form id="heroSearchForm" class="search-box-card">
+        <div class="search-field">
+          <span class="search-field-icon">🔍</span>
+          <input type="text" id="searchService" placeholder="What service do you need? (e.g. Electrician, AC Repair)" list="categoryList">
+          <datalist id="categoryList">
+            <option value="Electrician">
+            <option value="Plumber">
+            <option value="Mechanic">
+            <option value="Cleaner">
+            <option value="Carpenter">
+            <option value="AC Repair">
+            <option value="Painter">
+            <option value="Cooking Services">
+            <option value="Tutoring">
+          </datalist>
+        </div>
+
+        <div class="search-field">
+          <span class="search-field-icon">📍</span>
+          <input type="text" id="searchLocation" placeholder="Enter city or area (e.g. Downtown, Westside)">
+        </div>
+
+        <button type="submit" class="btn btn-primary search-btn btn-lg">Search Providers</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- Popular Service Categories Section -->
+  <section class="section">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">Categories</span>
+        <h2 class="section-title">Popular Service Categories</h2>
+        <p class="section-subtitle">Browse through a wide range of verified home and technical assistance services.</p>
+      </div>
+
+      <div class="category-grid" id="homeCategoriesGrid">
+        <!-- Rendered dynamically via API / mock data -->
+      </div>
+
+      <div style="text-align: center; margin-top: 2.5rem;">
+        <a href="pages/categories.html" class="btn btn-outline">View All Categories →</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works Section -->
+  <section class="section section-alt">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">Easy Process</span>
+        <h2 class="section-title">How ServiceConnect Works</h2>
+        <p class="section-subtitle">Book professional doorstep services in three effortless steps.</p>
+      </div>
+
+      <div class="steps-grid">
+        <div class="step-card">
+          <div class="step-number">1</div>
+          <h3 class="step-title">Search for a Service</h3>
+          <p class="step-text">Choose the required service and specify your locality to view available certified professionals.</p>
+        </div>
+
+        <div class="step-card">
+          <div class="step-number">2</div>
+          <h3 class="step-title">Compare & Choose</h3>
+          <p class="step-text">Check upfront starting rates, verified customer ratings, real-time availability and past reviews.</p>
+        </div>
+
+        <div class="step-card">
+          <div class="step-number">3</div>
+          <h3 class="step-title">Book & Relax</h3>
+          <p class="step-text">Pick a convenient date and time slot. Your provider arrives on schedule to get the job done right.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Recommended Service Providers Section -->
+  <section class="section">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">Top Rated</span>
+        <h2 class="section-title">Recommended Service Providers</h2>
+        <p class="section-subtitle">Certified and highly rated experts ready to assist you today.</p>
+      </div>
+
+      <div class="provider-grid" id="homeProvidersGrid">
+        <!-- Rendered dynamically -->
+      </div>
+
+      <div style="text-align: center; margin-top: 2.5rem;">
+        <a href="pages/providers.html" class="btn btn-outline">Explore All Providers →</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Why Choose ServiceConnect -->
+  <section class="section section-alt">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">Why Us</span>
+        <h2 class="section-title">Why Choose ServiceConnect?</h2>
+        <p class="section-subtitle">We empower your community by connecting honest customers with skilled local technicians.</p>
+      </div>
+
+      <div class="features-grid">
+        <div class="feature-box">
+          <div class="feature-icon-wrapper">🛡️</div>
+          <h3 class="feature-title">Verified Professionals</h3>
+          <p class="feature-text">Every service provider undergoes background screening and admin credential verification before onboarding.</p>
+        </div>
+
+        <div class="feature-box">
+          <div class="feature-icon-wrapper">🏷️</div>
+          <h3 class="feature-title">Transparent Pricing</h3>
+          <p class="feature-text">No hidden fees or unexpected charges. Compare pricing structures across service specialists before booking.</p>
+        </div>
+
+        <div class="feature-box">
+          <div class="feature-icon-wrapper">⏰</div>
+          <h3 class="feature-title">Real-Time Scheduling</h3>
+          <p class="feature-text">Live appointment slots updated in real-time. Avoid waiting around and prevent double-booking conflicts.</p>
+        </div>
+
+        <div class="feature-box">
+          <div class="feature-icon-wrapper">⭐</div>
+          <h3 class="feature-title">Authentic Reviews</h3>
+          <p class="feature-text">Only customers who have completed an actual booking are permitted to submit honest ratings and feedback.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Become a Provider CTA Banner -->
+  <section class="section">
+    <div class="container">
+      <div class="cta-banner">
+        <h2>Are You a Skilled Service Specialist?</h2>
+        <p>Join hundreds of local electricians, plumbers, technicians and cleaners expanding their customer base with ServiceConnect.</p>
+        <div class="cta-buttons">
+          <a href="pages/register.html?role=PROVIDER" class="btn btn-accent btn-lg">Register as Service Provider</a>
+          <a href="pages/categories.html" class="btn btn-outline btn-lg" style="color: #ffffff; border-color: rgba(255,255,255,0.3); background: transparent;">Browse Categories</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <div class="brand-logo" style="color: #ffffff; margin-bottom: 0.75rem;">
+            <div class="brand-icon">⚡</div>
+            <span>Service<span style="color: var(--color-accent);">Connect</span></span>
+          </div>
+          <p>Local Service Provider Discovery and Booking Platform. Smart Services. Stronger Community.</p>
+        </div>
+
+        <div class="footer-col">
+          <h4>Explore</h4>
+          <ul class="footer-links">
+            <li><a href="pages/categories.html">All Categories</a></li>
+            <li><a href="pages/providers.html">Search Providers</a></li>
+            <li><a href="pages/booking.html">Book Appointment</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4>For Providers</h4>
+          <ul class="footer-links">
+            <li><a href="pages/register.html?role=PROVIDER">Join as Provider</a></li>
+            <li><a href="pages/login.html">Provider Portal</a></li>
+            <li><a href="pages/provider-dashboard.html">Provider Dashboard</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4>Support & Legal</h4>
+          <ul class="footer-links">
+            <li><a href="#">Privacy Policy</a></li>
+            <li><a href="#">Terms of Service</a></li>
+            <li><a href="pages/login.html">Administrator Login</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <div>© 2026 ServiceConnect Platform. All rights reserved.</div>
+        <div>Built for Academic & Commercial Excellence. DBMS Integrated.</div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/main.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      // 1. Load Categories
+      const catRes = await Api.request('/categories');
+      if (catRes && catRes.data) {
+        const catContainer = document.getElementById('homeCategoriesGrid');
+        catContainer.innerHTML = catRes.data.slice(0, 8).map(c => `
+          <a href="pages/providers.html?category=${encodeURIComponent(c.name)}" class="category-card">
+            <div class="category-icon-box">${c.icon}</div>
+            <div class="category-name">${c.name}</div>
+            <div class="category-desc">${c.description}</div>
+          </a>
+        `).join('');
+      }
+
+      // 2. Load Top Providers
+      const provRes = await Api.request('/providers?sortBy=rating_desc');
+      if (provRes && provRes.data) {
+        const provContainer = document.getElementById('homeProvidersGrid');
+        provContainer.innerHTML = provRes.data.slice(0, 3).map(p => `
+          <div class="provider-card">
+            <div class="provider-header">
+              <img src="${p.avatar}" alt="${p.name}" class="provider-avatar">
+              <div class="provider-info">
+                <div class="provider-name">
+                  ${p.name}
+                  ${p.isVerified ? '<span class="badge badge-verified">✓ Verified</span>' : ''}
+                </div>
+                <div class="provider-category">${p.category} • ${p.businessName}</div>
+                <div class="provider-meta">
+                  <span class="rating-pill">★ ${p.rating} (${p.reviewsCount})</span>
+                  <span>📍 ${p.city}</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="provider-body">
+              <p class="provider-bio">${p.bio}</p>
+              <div class="provider-pricing-row">
+                <span class="price-label">Starts from</span>
+                <span class="price-val">${formatCurrency(p.startingPrice)}</span>
+              </div>
+            </div>
+
+            <div class="provider-footer-actions">
+              <a href="pages/provider-profile.html?id=${p.id}" class="btn btn-outline btn-sm">View Profile</a>
+              <a href="pages/booking.html?providerId=${p.id}" class="btn btn-primary btn-sm">Book Now</a>
+            </div>
+          </div>
+        `).join('');
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Service Categories – ServiceConnect</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <header class="navbar">
+    <div class="container nav-container">
+      <a href="../index.html" class="brand-logo">
+        <div class="brand-icon">⚡</div>
+        <div class="brand-text">Service<span>Connect</span></div>
+      </a>
+
+      <nav class="nav-menu">
+        <a href="../index.html" class="nav-link">Home</a>
+        <a href="categories.html" class="nav-link active">Explore Services</a>
+        <a href="providers.html" class="nav-link">Find Providers</a>
+        <a href="register.html?role=PROVIDER" class="nav-link">Become a Provider</a>
+        <div class="nav-actions"></div>
+      </nav>
+
+      <button class="mobile-menu-btn" aria-label="Toggle navigation">☰</button>
+    </div>
+  </header>
+
+  <!-- Page Header -->
+  <div style="background-color: var(--color-surface); border-bottom: 1px solid var(--color-border); padding: 3rem 0;">
+    <div class="container" style="text-align: center; max-width: 680px;">
+      <span class="section-tag">Browse Directory</span>
+      <h1 class="section-title">All Service Categories</h1>
+      <p class="section-subtitle">Select a service category below to view certified local technicians, transparent pricing and live availability slots.</p>
+      
+      <!-- Category Quick Filter -->
+      <div style="margin-top: 1.5rem; max-width: 440px; margin-left: auto; margin-right: auto;">
+        <input type="text" id="categoryFilterInput" class="form-control" placeholder="Search categories (e.g. Electrician, AC Repair)...">
+      </div>
+    </div>
+  </div>
+
+  <!-- Categories Grid Section -->
+  <main class="section">
+    <div class="container">
+      <div class="category-grid" id="allCategoriesGrid">
+        <!-- Rendered via JS -->
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-bottom">
+        <div>© 2026 ServiceConnect Platform. All rights reserved.</div>
+        <div><a href="../index.html" style="color: #ffffff;">Back to Home</a></div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="../js/api.js"></script>
+  <script src="../js/auth.js"></script>
+  <script src="../js/main.js"></script>
+  <script>
+    let categoriesList = [];
+
+    async function loadCategories() {
+      const res = await Api.request('/categories');
+      if (res && res.data) {
+        categoriesList = res.data;
+        renderCategories(categoriesList);
+      }
+    }
+
+    function renderCategories(items) {
+      const container = document.getElementById('allCategoriesGrid');
+      if (items.length === 0) {
+        container.innerHTML = `<div class="empty-state" style="grid-column: 1/-1;"><h3>No categories match your search</h3><p>Try searching for a different keyword or service.</p></div>`;
+        return;
+      }
+      container.innerHTML = items.map(c => `
+        <a href="providers.html?category=${encodeURIComponent(c.name)}" class="category-card">
+          <div class="category-icon-box">${c.icon}</div>
+          <div class="category-name">${c.name}</div>
+          <div class="category-desc">${c.description}</div>
+          <span style="margin-top: 1rem; font-size: var(--font-size-xs); font-weight: 600; color: var(--color-accent);">View Providers →</span>
+        </a>
+      `).join('');
+    }
+
+    document.getElementById('categoryFilterInput').addEventListener('input', (e) => {
+      const query = e.target.value.toLowerCase().trim();
+      const filtered = categoriesList.filter(c => 
+        c.name.toLowerCase().includes(query) || c.description.toLowerCase().includes(query)
+      );
+      renderCategories(filtered);
+    });
+
+    document.addEventListener('DOMContentLoaded', loadCategories);
+  </script>
+</body>
+</html>

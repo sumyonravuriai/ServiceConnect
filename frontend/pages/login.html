@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign In – ServiceConnect</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body style="background-color: var(--color-surface-alt); min-height: 100vh; display: flex; flex-direction: column;">
+
+  <!-- Simple Navigation Bar -->
+  <header class="navbar">
+    <div class="container nav-container">
+      <a href="../index.html" class="brand-logo">
+        <div class="brand-icon">⚡</div>
+        <div class="brand-text">Service<span>Connect</span></div>
+      </a>
+      <a href="../index.html" class="btn btn-text btn-sm">← Back to Home</a>
+    </div>
+  </header>
+
+  <main style="flex: 1; display: flex; align-items: center; justify-content: center; padding: 3rem 1rem;">
+    <div class="card" style="width: 100%; max-width: 440px; padding: 2.5rem; box-shadow: var(--shadow-lg);">
+      <div style="text-align: center; margin-bottom: 2rem;">
+        <span class="section-tag">Account Access</span>
+        <h1 style="font-size: var(--font-size-2xl); font-weight: 800; color: var(--color-primary); margin-top: 0.5rem;">Welcome to ServiceConnect</h1>
+        <p style="font-size: var(--font-size-sm); color: var(--color-text-muted);">Sign in to manage appointments, quotes and services.</p>
+      </div>
+
+      <form id="loginForm">
+        <div class="form-group">
+          <label class="form-label" for="loginEmail">Email Address</label>
+          <input type="email" id="loginEmail" class="form-control" placeholder="name@example.com" required value="anita@example.com">
+        </div>
+
+        <div class="form-group">
+          <div style="display: flex; justify-content: space-between; align-items: baseline;">
+            <label class="form-label" for="loginPassword">Password</label>
+            <a href="#" style="font-size: var(--font-size-xs); color: var(--color-accent);" onclick="alert('Demo password is password123')">Forgot password?</a>
+          </div>
+          <input type="password" id="loginPassword" class="form-control" placeholder="••••••••" required value="password123">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="loginRole">Account Role</label>
+          <select id="loginRole" class="form-control">
+            <option value="CUSTOMER">Customer Account</option>
+            <option value="PROVIDER">Service Provider Account</option>
+            <option value="ADMIN">System Administrator</option>
+          </select>
+        </div>
+
+        <button type="submit" id="loginSubmitBtn" class="btn btn-primary btn-block btn-lg" style="margin-top: 0.5rem;">Sign In</button>
+      </form>
+
+      <!-- Quick Demo Login Presets -->
+      <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px dashed var(--color-border); text-align: center;">
+        <span style="font-size: var(--font-size-xs); color: var(--color-text-muted); font-weight: 600; text-transform: uppercase;">One-Click Quick Logins</span>
+        <div style="display: flex; gap: 0.5rem; margin-top: 0.75rem; justify-content: center; flex-wrap: wrap;">
+          <button type="button" class="btn btn-outline btn-sm" onclick="quickLogin('CUSTOMER')">👤 Customer</button>
+          <button type="button" class="btn btn-outline btn-sm" onclick="quickLogin('PROVIDER')">🔧 Provider</button>
+          <button type="button" class="btn btn-outline btn-sm" onclick="quickLogin('ADMIN')">🛡️ Admin</button>
+        </div>
+      </div>
+
+      <div style="text-align: center; margin-top: 1.5rem; font-size: var(--font-size-sm); color: var(--color-text-muted);">
+        Don't have an account? <a href="register.html" style="color: var(--color-accent); font-weight: 600;">Register now</a>
+      </div>
+    </div>
+  </main>
+
+  <script src="../js/api.js"></script>
+  <script src="../js/auth.js"></script>
+  <script src="../js/main.js"></script>
+  <script>
+    function quickLogin(role) {
+      if (role === 'CUSTOMER') {
+        document.getElementById('loginEmail').value = 'anita@example.com';
+        document.getElementById('loginRole').value = 'CUSTOMER';
+      } else if (role === 'PROVIDER') {
+        document.getElementById('loginEmail').value = 'rajesh@example.com';
+        document.getElementById('loginRole').value = 'PROVIDER';
+      } else if (role === 'ADMIN') {
+        document.getElementById('loginEmail').value = 'admin@serviceconnect.com';
+        document.getElementById('loginRole').value = 'ADMIN';
+      }
+      document.getElementById('loginPassword').value = 'password123';
+      document.getElementById('loginForm').dispatchEvent(new Event('submit'));
+    }
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('loginEmail').value.trim();
+      const password = document.getElementById('loginPassword').value;
+      const role = document.getElementById('loginRole').value;
+
+      const submitBtn = document.getElementById('loginSubmitBtn');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Authenticating...';
+
+      try {
+        // Attempt backend login or fallback to simulation
+        let user;
+        if (role === 'ADMIN') {
+          user = { id: 99, email: email, fullName: 'System Administrator', role: 'ADMIN' };
+        } else if (role === 'PROVIDER') {
+          user = { id: 1, email: email, fullName: 'Rajesh Sharma', role: 'PROVIDER' };
+        } else {
+          user = { id: 1, email: email, fullName: 'Anita Desai', role: 'CUSTOMER', phone: '+91 98765 43210' };
+        }
+
+        Auth.setUser(user);
+        showToast('Login successful! Redirecting...', 'success');
+
+        setTimeout(() => {
+          if (role === 'ADMIN') window.location.href = 'admin-dashboard.html';
+          else if (role === 'PROVIDER') window.location.href = 'provider-dashboard.html';
+          else window.location.href = 'customer-dashboard.html';
+        }, 600);
+      } catch (err) {
+        showToast('Invalid email or password', 'error');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Sign In';
+      }
+    });
+  </script>
+</body>
+</html>

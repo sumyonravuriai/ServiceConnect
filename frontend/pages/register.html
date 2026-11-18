@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create an Account – ServiceConnect</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body style="background-color: var(--color-surface-alt); min-height: 100vh; display: flex; flex-direction: column;">
+
+  <!-- Simple Navigation Bar -->
+  <header class="navbar">
+    <div class="container nav-container">
+      <a href="../index.html" class="brand-logo">
+        <div class="brand-icon">⚡</div>
+        <div class="brand-text">Service<span>Connect</span></div>
+      </a>
+      <a href="../index.html" class="btn btn-text btn-sm">← Back to Home</a>
+    </div>
+  </header>
+
+  <main style="flex: 1; display: flex; align-items: center; justify-content: center; padding: 3rem 1rem;">
+    <div class="card" style="width: 100%; max-width: 600px; padding: 2.5rem; box-shadow: var(--shadow-lg);">
+      <div style="text-align: center; margin-bottom: 2rem;">
+        <span class="section-tag">Get Started</span>
+        <h1 style="font-size: var(--font-size-2xl); font-weight: 800; color: var(--color-primary); margin-top: 0.5rem;">Join ServiceConnect</h1>
+        <p style="font-size: var(--font-size-sm); color: var(--color-text-muted);">Choose your account type to register as a client or verified local professional.</p>
+      </div>
+
+      <!-- Role Selector Tabs -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 2rem;">
+        <button type="button" id="tabCustomer" class="btn btn-primary" onclick="setRegisterRole('CUSTOMER')">👤 I am a Customer</button>
+        <button type="button" id="tabProvider" class="btn btn-outline" onclick="setRegisterRole('PROVIDER')">🔧 I am a Service Provider</button>
+      </div>
+
+      <!-- Registration Form -->
+      <form id="registerForm">
+        <input type="hidden" id="regRole" value="CUSTOMER">
+
+        <!-- Common Fields -->
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="regFullName">Full Name</label>
+            <input type="text" id="regFullName" class="form-control" placeholder="John Doe" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="regPhone">Phone Number</label>
+            <input type="tel" id="regPhone" class="form-control" placeholder="+91 98765 00000" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="regEmail">Email Address</label>
+            <input type="email" id="regEmail" class="form-control" placeholder="name@example.com" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="regPassword">Password</label>
+            <input type="password" id="regPassword" class="form-control" placeholder="Minimum 6 characters" minlength="6" required>
+          </div>
+        </div>
+
+        <!-- Customer Specific Fields -->
+        <div id="customerExtraFields">
+          <div class="form-group">
+            <label class="form-label" for="regAddress">Home / Delivery Address</label>
+            <input type="text" id="regAddress" class="form-control" placeholder="House/Flat number, locality, city">
+          </div>
+        </div>
+
+        <!-- Provider Specific Fields -->
+        <div id="providerExtraFields" style="display: none;">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="regBusinessName">Business / Trade Name</label>
+              <input type="text" id="regBusinessName" class="form-control" placeholder="e.g. Apex Electrical Repairs">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="regCategory">Primary Trade Category</label>
+              <select id="regCategory" class="form-control">
+                <option value="Electrician">Electrician</option>
+                <option value="Plumber">Plumber</option>
+                <option value="Mechanic">Mechanic</option>
+                <option value="Cleaner">Cleaner</option>
+                <option value="Carpenter">Carpenter</option>
+                <option value="AC Repair">AC Repair</option>
+                <option value="Painter">Painter</option>
+                <option value="Cooking Services">Cooking Services</option>
+                <option value="Tutoring">Tutoring</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="regExperience">Years of Experience</label>
+              <input type="number" id="regExperience" class="form-control" placeholder="e.g. 5" min="1" max="50">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="regStartingPrice">Base Starting Fee (₹)</label>
+              <input type="number" id="regStartingPrice" class="form-control" placeholder="e.g. 350" min="50">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="regServiceAreas">Service Coverage Cities / Areas</label>
+            <input type="text" id="regServiceAreas" class="form-control" placeholder="e.g. Downtown, Westside, North Suburbs">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="regBio">Short Professional Bio</label>
+            <textarea id="regBio" class="form-control" rows="2" placeholder="Describe your experience, certifications and services offered..."></textarea>
+          </div>
+        </div>
+
+        <button type="submit" id="regSubmitBtn" class="btn btn-primary btn-block btn-lg" style="margin-top: 1rem;">Create Account</button>
+      </form>
+
+      <div style="text-align: center; margin-top: 1.5rem; font-size: var(--font-size-sm); color: var(--color-text-muted);">
+        Already have an account? <a href="login.html" style="color: var(--color-accent); font-weight: 600;">Sign in here</a>
+      </div>
+    </div>
+  </main>
+
+  <script src="../js/api.js"></script>
+  <script src="../js/auth.js"></script>
+  <script src="../js/main.js"></script>
+  <script>
+    function setRegisterRole(role) {
+      document.getElementById('regRole').value = role;
+      const tabC = document.getElementById('tabCustomer');
+      const tabP = document.getElementById('tabProvider');
+      const extraC = document.getElementById('customerExtraFields');
+      const extraP = document.getElementById('providerExtraFields');
+
+      if (role === 'PROVIDER') {
+        tabP.className = 'btn btn-primary';
+        tabC.className = 'btn btn-outline';
+        extraP.style.display = 'block';
+        extraC.style.display = 'none';
+      } else {
+        tabC.className = 'btn btn-primary';
+        tabP.className = 'btn btn-outline';
+        extraC.style.display = 'block';
+        extraP.style.display = 'none';
+      }
+    }
+
+    // Check URL query for initial role
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('role') === 'PROVIDER') {
+      setRegisterRole('PROVIDER');
+    }
+
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const role = document.getElementById('regRole').value;
+      const fullName = document.getElementById('regFullName').value.trim();
+      const phone = document.getElementById('regPhone').value.trim();
+      const email = document.getElementById('regEmail').value.trim();
+      const password = document.getElementById('regPassword').value;
+
+      const newUser = {
+        id: Date.now(),
+        fullName,
+        phone,
+        email,
+        role
+      };
+
+      if (role === 'PROVIDER') {
+        newUser.businessName = document.getElementById('regBusinessName').value.trim() || fullName;
+        newUser.category = document.getElementById('regCategory').value;
+        newUser.experience = `${document.getElementById('regExperience').value || 3} years`;
+        newUser.startingPrice = Number(document.getElementById('regStartingPrice').value) || 350;
+        newUser.serviceArea = document.getElementById('regServiceAreas').value || 'Downtown';
+        newUser.bio = document.getElementById('regBio').value || 'Verified skilled service professional.';
+      }
+
+      Auth.setUser(newUser);
+      showToast('Registration successful! Welcome to ServiceConnect', 'success');
+
+      setTimeout(() => {
+        if (role === 'PROVIDER') {
+          window.location.href = 'provider-dashboard.html';
+        } else {
+          window.location.href = 'customer-dashboard.html';
+        }
+      }, 700);
+    });
+  </script>
+</body>
+</html>

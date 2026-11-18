@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Find Local Service Providers – ServiceConnect</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <header class="navbar">
+    <div class="container nav-container">
+      <a href="../index.html" class="brand-logo">
+        <div class="brand-icon">⚡</div>
+        <div class="brand-text">Service<span>Connect</span></div>
+      </a>
+
+      <nav class="nav-menu">
+        <a href="../index.html" class="nav-link">Home</a>
+        <a href="categories.html" class="nav-link">Explore Services</a>
+        <a href="providers.html" class="nav-link active">Find Providers</a>
+        <a href="register.html?role=PROVIDER" class="nav-link">Become a Provider</a>
+        <div class="nav-actions"></div>
+      </nav>
+
+      <button class="mobile-menu-btn" aria-label="Toggle navigation">☰</button>
+    </div>
+  </header>
+
+  <!-- Filter & Search Toolbar -->
+  <div style="background-color: var(--color-surface); border-bottom: 1px solid var(--color-border); padding: 1.75rem 0;">
+    <div class="container">
+      <form id="filterForm" class="search-box-card" style="box-shadow: none; border-color: var(--color-border);">
+        <!-- Service Category -->
+        <div class="search-field" style="flex: 1 1 180px;">
+          <span class="search-field-icon">⚡</span>
+          <select id="filterCategory">
+            <option value="">All Service Categories</option>
+            <option value="Electrician">Electrician</option>
+            <option value="Plumber">Plumber</option>
+            <option value="Mechanic">Mechanic</option>
+            <option value="Cleaner">Cleaner</option>
+            <option value="Carpenter">Carpenter</option>
+            <option value="AC Repair">AC Repair</option>
+            <option value="Painter">Painter</option>
+            <option value="Cooking Services">Cooking Services</option>
+            <option value="Tutoring">Tutoring</option>
+          </select>
+        </div>
+
+        <!-- Location -->
+        <div class="search-field" style="flex: 1 1 160px;">
+          <span class="search-field-icon">📍</span>
+          <input type="text" id="filterLocation" placeholder="City / Area">
+        </div>
+
+        <!-- Rating Filter -->
+        <div class="search-field" style="flex: 1 1 130px;">
+          <span class="search-field-icon">⭐</span>
+          <select id="filterRating">
+            <option value="">Any Rating</option>
+            <option value="4.5">4.5 & above</option>
+            <option value="4.0">4.0 & above</option>
+            <option value="3.5">3.5 & above</option>
+          </select>
+        </div>
+
+        <!-- Sort Option -->
+        <div class="search-field" style="flex: 1 1 150px;">
+          <span class="search-field-icon">↕️</span>
+          <select id="sortBy">
+            <option value="rating_desc">Highest Rated</option>
+            <option value="price_asc">Price: Low to High</option>
+            <option value="price_desc">Price: High to Low</option>
+          </select>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Filter Results</button>
+        <button type="button" id="resetBtn" class="btn btn-outline">Reset</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Main Listing -->
+  <main class="section">
+    <div class="container">
+      <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 1.5rem;">
+        <h2 id="resultsCountHeading" style="font-size: var(--font-size-xl); font-weight: 700; color: var(--color-primary);">Available Service Providers</h2>
+        <span id="activeFilterSummary" style="font-size: var(--font-size-xs); color: var(--color-text-muted);"></span>
+      </div>
+
+      <div class="provider-grid" id="providersList">
+        <!-- Providers dynamically rendered -->
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-bottom">
+        <div>© 2026 ServiceConnect Platform. All rights reserved.</div>
+        <div><a href="../index.html" style="color: #ffffff;">Back to Home</a></div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="../js/api.js"></script>
+  <script src="../js/auth.js"></script>
+  <script src="../js/main.js"></script>
+  <script>
+    // Read URL query params on load
+    const urlParams = new URLSearchParams(window.location.search);
+    const initialCategory = urlParams.get('category') || '';
+    const initialCity = urlParams.get('city') || '';
+
+    if (initialCategory) document.getElementById('filterCategory').value = initialCategory;
+    if (initialCity) document.getElementById('filterLocation').value = initialCity;
+
+    async function fetchAndRenderProviders() {
+      const category = document.getElementById('filterCategory').value;
+      const city = document.getElementById('filterLocation').value.trim();
+      const minRating = document.getElementById('filterRating').value;
+      const sortBy = document.getElementById('sortBy').value;
+
+      const params = new URLSearchParams();
+      if (category) params.set('category', category);
+      if (city) params.set('city', city);
+      if (minRating) params.set('minRating', minRating);
+      if (sortBy) params.set('sortBy', sortBy);
+
+      const res = await Api.request(`/providers?${params.toString()}`);
+      const container = document.getElementById('providersList');
+      const countHeading = document.getElementById('resultsCountHeading');
+
+      if (!res || !res.data || res.data.length === 0) {
+        countHeading.textContent = `0 Providers Found`;
+        container.innerHTML = `
+          <div class="empty-state" style="grid-column: 1/-1;">
+            <div class="empty-state-icon">🔍</div>
+            <h3>No matching service providers found</h3>
+            <p>Try broadening your search criteria or resetting filters.</p>
+            <button class="btn btn-outline" onclick="resetFilters()">Reset All Filters</button>
+          </div>
+        `;
+        return;
+      }
+
+      countHeading.textContent = `${res.data.length} Service Specialist${res.data.length > 1 ? 's' : ''} Found`;
+
+      container.innerHTML = res.data.map(p => `
+        <div class="provider-card">
+          <div class="provider-header">
+            <img src="${p.avatar}" alt="${p.name}" class="provider-avatar">
+            <div class="provider-info">
+              <div class="provider-name">
+                ${p.name}
+                ${p.isVerified ? '<span class="badge badge-verified" title="Identity and background verified">✓ Verified</span>' : ''}
+              </div>
+              <div class="provider-category">${p.category} • ${p.businessName}</div>
+              <div class="provider-meta">
+                <span class="rating-pill">★ ${p.rating} (${p.reviewsCount})</span>
+                <span>⏱️ ${p.experience}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="provider-body">
+            <p class="provider-bio">${p.bio}</p>
+            <div style="font-size: var(--font-size-xs); color: var(--color-text-muted); margin-bottom: 0.75rem;">
+              <span>📍 Service Area: <strong>${p.serviceArea}</strong></span>
+            </div>
+            <div class="provider-pricing-row">
+              <span class="price-label">Starting Rate</span>
+              <span class="price-val">${formatCurrency(p.startingPrice)}</span>
+            </div>
+          </div>
+
+          <div class="provider-footer-actions">
+            <a href="provider-profile.html?id=${p.id}" class="btn btn-outline btn-sm">View Profile</a>
+            <a href="booking.html?providerId=${p.id}" class="btn btn-primary btn-sm">Book Appointment</a>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function resetFilters() {
+      document.getElementById('filterCategory').value = '';
+      document.getElementById('filterLocation').value = '';
+      document.getElementById('filterRating').value = '';
+      document.getElementById('sortBy').value = 'rating_desc';
+      fetchAndRenderProviders();
+    }
+
+    document.getElementById('filterForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      fetchAndRenderProviders();
+    });
+
+    document.getElementById('resetBtn').addEventListener('click', resetFilters);
+
+    document.addEventListener('DOMContentLoaded', fetchAndRenderProviders);
+  </script>
+</body>
+</html>

@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard – ServiceConnect</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/styles.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <header class="navbar">
+    <div class="container nav-container">
+      <a href="../index.html" class="brand-logo">
+        <div class="brand-icon">⚡</div>
+        <div class="brand-text">Service<span>Connect</span> <span style="font-size: var(--font-size-xs); color: var(--color-accent); font-weight: 700; border: 1px solid var(--color-accent); padding: 0.1rem 0.4rem; border-radius: var(--radius-sm);">ADMIN</span></div>
+      </a>
+
+      <nav class="nav-menu">
+        <a href="../index.html" class="nav-link">Main Site</a>
+        <a href="categories.html" class="nav-link">Categories</a>
+        <a href="providers.html" class="nav-link">Providers</a>
+        <div class="nav-actions"></div>
+      </nav>
+
+      <button class="mobile-menu-btn" aria-label="Toggle navigation">☰</button>
+    </div>
+  </header>
+
+  <div class="dashboard-layout">
+    <!-- Sidebar -->
+    <aside class="dashboard-sidebar">
+      <div class="sidebar-user">
+        <div class="sidebar-avatar" style="background-color: var(--status-progress-bg); color: var(--status-progress);">A</div>
+        <div class="sidebar-user-info">
+          <h4>Admin Portal</h4>
+          <span class="sidebar-user-role">System Administrator</span>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a class="sidebar-link active" onclick="switchAdminTab('overview', this)">
+          <span class="sidebar-link-icon">📊</span>
+          <span>Platform Overview</span>
+        </a>
+        <a class="sidebar-link" onclick="switchAdminTab('approvals', this)">
+          <span class="sidebar-link-icon">🛡️</span>
+          <span>Provider Approvals</span>
+        </a>
+        <a class="sidebar-link" onclick="switchAdminTab('categories', this)">
+          <span class="sidebar-link-icon">⚡</span>
+          <span>Service Categories</span>
+        </a>
+        <a class="sidebar-link" onclick="switchAdminTab('users', this)">
+          <span class="sidebar-link-icon">👥</span>
+          <span>User Accounts</span>
+        </a>
+        <a class="sidebar-link" onclick="switchAdminTab('allBookings', this)">
+          <span class="sidebar-link-icon">📑</span>
+          <span>All Bookings</span>
+        </a>
+        <a class="sidebar-link" onclick="Auth.logout()" style="color: var(--status-cancelled); margin-top: auto;">
+          <span class="sidebar-link-icon">🚪</span>
+          <span>Sign Out</span>
+        </a>
+      </nav>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="dashboard-main">
+      <div class="dashboard-header">
+        <div class="dashboard-title-box">
+          <h1>System Control & Analytics</h1>
+          <p>Monitor platform performance, verify local service businesses and moderate transactions.</p>
+        </div>
+        <div>
+          <button class="btn btn-outline btn-sm" onclick="showToast('Database connection healthy: MySQL 8.0', 'success')">DB Status: Connected</button>
+        </div>
+      </div>
+
+      <!-- High Level Metrics Grid -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-info">
+            <div class="stat-label">Total Customers</div>
+            <div class="stat-value" id="admCustomers">142</div>
+          </div>
+          <div class="stat-icon">👤</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-info">
+            <div class="stat-label">Active Providers</div>
+            <div class="stat-value" id="admProviders">38</div>
+          </div>
+          <div class="stat-icon">🔧</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-info">
+            <div class="stat-label">Total Bookings</div>
+            <div class="stat-value" id="admBookings">289</div>
+          </div>
+          <div class="stat-icon">📅</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-info">
+            <div class="stat-label">Pending Verifications</div>
+            <div class="stat-value" id="admApprovals" style="color: var(--status-pending);">4</div>
+          </div>
+          <div class="stat-icon" style="color: var(--status-pending);">⏳</div>
+        </div>
+      </div>
+
+      <!-- SECTION: Overview (Recent Bookings & Quick Actions) -->
+      <div id="admSectionOverview">
+        <h3 style="font-size: var(--font-size-lg); font-weight: 700; margin-bottom: 1.25rem;">Recent Platform Activity</h3>
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Booking Ref</th>
+                <th>Customer</th>
+                <th>Provider</th>
+                <th>Service</th>
+                <th>Scheduled Date</th>
+                <th>Status</th>
+                <th>Price</th>
+              </tr>
+            </thead>
+            <tbody id="admRecentBookingsBody">
+              <!-- Injected via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- SECTION: Pending Provider Approvals -->
+      <div id="admSectionApprovals" style="display: none;">
+        <h3 style="font-size: var(--font-size-lg); font-weight: 700; margin-bottom: 1rem;">Provider Registration Approvals</h3>
+        <p style="font-size: var(--font-size-sm); color: var(--color-text-muted); margin-bottom: 1.5rem;">Review and verify business credentials before activating provider profiles on search results.</p>
+
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Provider Name</th>
+                <th>Business Entity</th>
+                <th>Category</th>
+                <th>Experience</th>
+                <th>Service Area</th>
+                <th>Status</th>
+                <th style="text-align: right;">Review Action</th>
+              </tr>
+            </thead>
+            <tbody id="admApprovalsTableBody">
+              <tr>
+                <td><strong>Vikram Patel</strong></td>
+                <td>Patel Painting Solutions</td>
+                <td>Painter</td>
+                <td>6 years</td>
+                <td>Downtown, South Zone</td>
+                <td><span class="badge badge-pending">Pending Review</span></td>
+                <td style="text-align: right;">
+                  <button class="btn btn-primary btn-sm" onclick="approveProvider(this)">Approve</button>
+                  <button class="btn btn-danger btn-sm" onclick="rejectProvider(this)">Reject</button>
+                </td>
+              </tr>
+              <tr>
+                <td><strong>Pooja Verma</strong></td>
+                <td>Verma Home Culinary Chef</td>
+                <td>Cooking Services</td>
+                <td>4 years</td>
+                <td>Westside, North Hub</td>
+                <td><span class="badge badge-pending">Pending Review</span></td>
+                <td style="text-align: right;">
+                  <button class="btn btn-primary btn-sm" onclick="approveProvider(this)">Approve</button>
+                  <button class="btn btn-danger btn-sm" onclick="rejectProvider(this)">Reject</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- SECTION: Service Categories Management -->
+      <div id="admSectionCategories" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+          <div>
+            <h3 style="font-size: var(--font-size-lg); font-weight: 700;">Service Categories Directory</h3>
+            <p style="font-size: var(--font-size-sm); color: var(--color-text-muted);">Manage categories, descriptions and active display states.</p>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="openAddCategoryModal()">+ Add New Category</button>
+        </div>
+
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Icon</th>
+                <th>Category Name</th>
+                <th>Slug</th>
+                <th>Description</th>
+                <th>Status</th>
+                <th style="text-align: right;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="admCategoriesTableBody">
+              <!-- Injected via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- SECTION: User Accounts -->
+      <div id="admSectionUsers" style="display: none;">
+        <h3 style="font-size: var(--font-size-lg); font-weight: 700; margin-bottom: 1.5rem;">Manage User Accounts</h3>
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>User ID</th>
+                <th>Full Name</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Account Status</th>
+                <th style="text-align: right;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="admUsersTableBody">
+              <tr>
+                <td>#USR-101</td>
+                <td>Anita Desai</td>
+                <td>anita@example.com</td>
+                <td><span class="badge badge-completed">CUSTOMER</span></td>
+                <td><span class="badge badge-verified">Active</span></td>
+                <td style="text-align: right;">
+                  <button class="btn btn-outline btn-sm" onclick="toggleSuspend(this)">Suspend</button>
+                </td>
+              </tr>
+              <tr>
+                <td>#USR-102</td>
+                <td>Rajesh Sharma</td>
+                <td>rajesh@example.com</td>
+                <td><span class="badge badge-accepted">PROVIDER</span></td>
+                <td><span class="badge badge-verified">Active</span></td>
+                <td style="text-align: right;">
+                  <button class="btn btn-outline btn-sm" onclick="toggleSuspend(this)">Suspend</button>
+                </td>
+              </tr>
+              <tr>
+                <td>#USR-103</td>
+                <td>David Miller</td>
+                <td>david@example.com</td>
+                <td><span class="badge badge-accepted">PROVIDER</span></td>
+                <td><span class="badge badge-verified">Active</span></td>
+                <td style="text-align: right;">
+                  <button class="btn btn-outline btn-sm" onclick="toggleSuspend(this)">Suspend</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- SECTION: All Bookings -->
+      <div id="admSectionAllBookings" style="display: none;">
+        <h3 style="font-size: var(--font-size-lg); font-weight: 700; margin-bottom: 1.5rem;">All Platform Transactions</h3>
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Booking Ref</th>
+                <th>Customer</th>
+                <th>Provider</th>
+                <th>Service</th>
+                <th>Date & Slot</th>
+                <th>Status</th>
+                <th>Price</th>
+              </tr>
+            </thead>
+            <tbody id="admAllBookingsTableBody">
+              <!-- Injected via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <script src="../js/api.js"></script>
+  <script src="../js/auth.js"></script>
+  <script src="../js/main.js"></script>
+  <script>
+    async function initAdminDashboard() {
+      // Mock login as admin if not logged in
+      let user = Auth.getUser();
+      if (!user || user.role !== 'ADMIN') {
+        user = { id: 99, email: 'admin@serviceconnect.com', fullName: 'System Admin', role: 'ADMIN' };
+        Auth.setUser(user);
+      }
+
+      await loadAdminStats();
+      await loadAdminBookings();
+      await loadAdminCategories();
+    }
+
+    async function loadAdminStats() {
+      const res = await Api.request('/admin/stats');
+      if (res && res.data) {
+        document.getElementById('admCustomers').textContent = res.data.totalCustomers;
+        document.getElementById('admProviders').textContent = res.data.totalProviders;
+        document.getElementById('admBookings').textContent = res.data.totalBookings;
+        document.getElementById('admApprovals').textContent = res.data.pendingApprovals;
+      }
+    }
+
+    async function loadAdminBookings() {
+      const res = await Api.request('/bookings');
+      if (res && res.data) {
+        const bookings = res.data;
+
+        // Render Recent Activity
+        const recBody = document.getElementById('admRecentBookingsBody');
+        recBody.innerHTML = bookings.slice(0, 5).map(b => `
+          <tr>
+            <td><span class="ref-tag">${b.reference}</span></td>
+            <td>${b.customerName}</td>
+            <td>${b.providerName}</td>
+            <td>${b.serviceName}</td>
+            <td>${b.bookingDate}</td>
+            <td><span class="badge ${b.status === 'COMPLETED' ? 'badge-completed' : (b.status === 'ACCEPTED' ? 'badge-accepted' : 'badge-pending')}">${b.status}</span></td>
+            <td><strong>${formatCurrency(b.price)}</strong></td>
+          </tr>
+        `).join('');
+
+        // Render All Bookings
+        const allBody = document.getElementById('admAllBookingsTableBody');
+        allBody.innerHTML = bookings.map(b => `
+          <tr>
+            <td><span class="ref-tag">${b.reference}</span></td>
+            <td>${b.customerName}</td>
+            <td>${b.providerName}</td>
+            <td>${b.serviceName}</td>
+            <td>${b.bookingDate} (${b.timeSlot})</td>
+            <td><span class="badge ${b.status === 'COMPLETED' ? 'badge-completed' : (b.status === 'ACCEPTED' ? 'badge-accepted' : 'badge-pending')}">${b.status}</span></td>
+            <td><strong>${formatCurrency(b.price)}</strong></td>
+          </tr>
+        `).join('');
+      }
+    }
+
+    async function loadAdminCategories() {
+      const res = await Api.request('/categories');
+      if (res && res.data) {
+        const tbody = document.getElementById('admCategoriesTableBody');
+        tbody.innerHTML = res.data.map(c => `
+          <tr>
+            <td style="font-size: 1.5rem;">${c.icon}</td>
+            <td><strong>${c.name}</strong></td>
+            <td><code>${c.slug}</code></td>
+            <td style="color: var(--color-text-muted); font-size: var(--font-size-xs);">${c.description}</td>
+            <td><span class="badge badge-completed">Active</span></td>
+            <td style="text-align: right;">
+              <button class="btn btn-outline btn-sm" onclick="showToast('Edit Category mode', 'info')">Edit</button>
+            </td>
+          </tr>
+        `).join('');
+      }
+    }
+
+    function switchAdminTab(tab, el) {
+      document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
+      el.classList.add('active');
+
+      document.getElementById('admSectionOverview').style.display = (tab === 'overview') ? 'block' : 'none';
+      document.getElementById('admSectionApprovals').style.display = (tab === 'approvals') ? 'block' : 'none';
+      document.getElementById('admSectionCategories').style.display = (tab === 'categories') ? 'block' : 'none';
+      document.getElementById('admSectionUsers').style.display = (tab === 'users') ? 'block' : 'none';
+      document.getElementById('admSectionAllBookings').style.display = (tab === 'allBookings') ? 'block' : 'none';
+    }
+
+    function approveProvider(btn) {
+      const row = btn.closest('tr');
+      row.style.opacity = '0.5';
+      btn.disabled = true;
+      showToast('Provider credentials verified and account activated!', 'success');
+      setTimeout(() => row.remove(), 500);
+    }
+
+    function rejectProvider(btn) {
+      const row = btn.closest('tr');
+      row.style.opacity = '0.5';
+      btn.disabled = true;
+      showToast('Provider registration rejected', 'info');
+      setTimeout(() => row.remove(), 500);
+    }
+
+    function toggleSuspend(btn) {
+      if (btn.textContent === 'Suspend') {
+        btn.textContent = 'Activate';
+        btn.className = 'btn btn-primary btn-sm';
+        showToast('User account suspended', 'error');
+      } else {
+        btn.textContent = 'Suspend';
+        btn.className = 'btn btn-outline btn-sm';
+        showToast('User account activated', 'success');
+      }
+    }
+
+    function openAddCategoryModal() {
+      const catName = prompt('Enter new category name:');
+      if (catName) {
+        showToast(`Category "${catName}" added!`, 'success');
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', initAdminDashboard);
+  </script>
+</body>
+</html>

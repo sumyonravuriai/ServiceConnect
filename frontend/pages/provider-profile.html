@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Provider Profile – ServiceConnect</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/styles.css">
+  <style>
+    .profile-hero {
+      background-color: var(--color-surface);
+      border-bottom: 1px solid var(--color-border);
+      padding: 3rem 0;
+    }
+    .profile-layout {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 2.5rem;
+      margin-top: 2.5rem;
+    }
+    .service-item-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 0;
+      border-bottom: 1px solid var(--color-border);
+    }
+    .service-item-row:last-child {
+      border-bottom: none;
+    }
+    .review-bubble {
+      background-color: var(--color-surface-alt);
+      border-radius: var(--radius-md);
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+    }
+    .review-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: var(--font-size-xs);
+      color: var(--color-text-muted);
+      margin-bottom: 0.5rem;
+    }
+    @media (max-width: 850px) {
+      .profile-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <header class="navbar">
+    <div class="container nav-container">
+      <a href="../index.html" class="brand-logo">
+        <div class="brand-icon">⚡</div>
+        <div class="brand-text">Service<span>Connect</span></div>
+      </a>
+
+      <nav class="nav-menu">
+        <a href="../index.html" class="nav-link">Home</a>
+        <a href="categories.html" class="nav-link">Explore Services</a>
+        <a href="providers.html" class="nav-link">Find Providers</a>
+        <a href="register.html?role=PROVIDER" class="nav-link">Become a Provider</a>
+        <div class="nav-actions"></div>
+      </nav>
+
+      <button class="mobile-menu-btn" aria-label="Toggle navigation">☰</button>
+    </div>
+  </header>
+
+  <!-- Profile Hero Header -->
+  <section class="profile-hero">
+    <div class="container">
+      <div id="profileHeaderContent" style="display: flex; align-items: center; gap: 2rem; flex-wrap: wrap;">
+        <!-- Dynamically injected -->
+      </div>
+    </div>
+  </section>
+
+  <!-- Profile Main Body -->
+  <main class="container" style="margin-bottom: 5rem;">
+    <div class="profile-layout">
+      <!-- Left Column: Details, Services, Reviews -->
+      <div>
+        <!-- About Section -->
+        <div class="card" style="margin-bottom: 2rem;">
+          <h3 style="font-size: var(--font-size-lg); font-weight: 700; color: var(--color-primary); margin-bottom: 1rem;">Professional Overview</h3>
+          <p id="profileBio" style="color: var(--color-text-muted); font-size: var(--font-size-base); line-height: 1.7;"></p>
+        </div>
+
+        <!-- Offered Services & Rates -->
+        <div class="card" style="margin-bottom: 2rem;">
+          <h3 style="font-size: var(--font-size-lg); font-weight: 700; color: var(--color-primary); margin-bottom: 1rem;">Services & Transparent Rates</h3>
+          <div id="servicesList">
+            <!-- Services injected -->
+          </div>
+        </div>
+
+        <!-- Verified Customer Reviews -->
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <h3 style="font-size: var(--font-size-lg); font-weight: 700; color: var(--color-primary);">Verified Customer Reviews</h3>
+            <span id="reviewsCountBadge" class="rating-pill">★ 4.9 (38)</span>
+          </div>
+          <div id="reviewsContainer">
+            <!-- Reviews list injected -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Booking Quick Widget & Details -->
+      <div>
+        <div class="card" style="position: sticky; top: 6rem;">
+          <h3 style="font-size: var(--font-size-lg); font-weight: 700; color: var(--color-primary); margin-bottom: 0.5rem;">Book Appointment</h3>
+          <p style="font-size: var(--font-size-xs); color: var(--color-text-muted); margin-bottom: 1.5rem;">Choose a service item and lock in your preferred time slot.</p>
+
+          <div style="padding: 1rem; background-color: var(--color-surface-alt); border-radius: var(--radius-md); margin-bottom: 1.5rem;">
+            <div style="font-size: var(--font-size-xs); color: var(--color-text-muted);">Starting Consultation</div>
+            <div id="startingPriceVal" style="font-size: var(--font-size-2xl); font-weight: 800; color: var(--color-primary);"></div>
+          </div>
+
+          <div style="margin-bottom: 1.5rem; font-size: var(--font-size-sm);">
+            <div style="display: flex; gap: 0.5rem; margin-bottom: 0.75rem;">
+              <span>🕒</span>
+              <div>
+                <strong>Working Hours</strong>
+                <div id="workingHoursTxt" style="color: var(--color-text-muted); font-size: var(--font-size-xs);"></div>
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 0.5rem;">
+              <span>📍</span>
+              <div>
+                <strong>Service Locations</strong>
+                <div id="serviceAreaTxt" style="color: var(--color-text-muted); font-size: var(--font-size-xs);"></div>
+              </div>
+            </div>
+          </div>
+
+          <a id="bookAppointmentBtn" href="#" class="btn btn-primary btn-block btn-lg">Book Service Now</a>
+          <p style="font-size: var(--font-size-xs); text-align: center; color: var(--color-text-light); margin-top: 0.75rem;">Instant confirmation • Verified professional</p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-bottom">
+        <div>© 2026 ServiceConnect Platform. All rights reserved.</div>
+        <div><a href="providers.html" style="color: #ffffff;">← Back to Providers</a></div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="../js/api.js"></script>
+  <script src="../js/auth.js"></script>
+  <script src="../js/main.js"></script>
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const providerId = Number(urlParams.get('id')) || 1;
+
+    async function loadProviderProfile() {
+      const res = await Api.request(`/providers/${providerId}`);
+      if (!res || !res.data) {
+        document.body.innerHTML = `<div class="container" style="padding: 4rem 1rem; text-align: center;"><h2>Provider not found</h2><a href="providers.html" class="btn btn-primary">Return to Providers</a></div>`;
+        return;
+      }
+
+      const p = res.data;
+
+      // Update Profile Hero
+      document.getElementById('profileHeaderContent').innerHTML = `
+        <img src="${p.avatar}" alt="${p.name}" style="width: 110px; height: 110px; border-radius: var(--radius-lg); object-fit: cover; border: 3px solid var(--color-surface); box-shadow: var(--shadow-md);">
+        <div>
+          <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+            <h1 style="font-size: var(--font-size-3xl); font-weight: 800; color: var(--color-primary);">${p.name}</h1>
+            ${p.isVerified ? '<span class="badge badge-verified">✓ Verified Specialist</span>' : ''}
+            <span class="badge ${p.isAvailable ? 'badge-completed' : 'badge-pending'}">${p.isAvailable ? '● Available Today' : 'Busy'}</span>
+          </div>
+          <div style="font-size: var(--font-size-base); color: var(--color-accent); font-weight: 600; margin-top: 0.25rem;">
+            ${p.category} • ${p.businessName}
+          </div>
+          <div style="display: flex; align-items: center; gap: 1.5rem; margin-top: 0.75rem; font-size: var(--font-size-sm); color: var(--color-text-muted); flex-wrap: wrap;">
+            <span class="rating-pill">★ ${p.rating} (${p.reviewsCount} reviews)</span>
+            <span>⏱️ <strong>${p.experience}</strong> of professional service</span>
+            <span>📍 <strong>${p.city}</strong></span>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('profileBio').textContent = p.bio;
+      document.getElementById('startingPriceVal').textContent = formatCurrency(p.startingPrice);
+      document.getElementById('workingHoursTxt').textContent = p.workingHours;
+      document.getElementById('serviceAreaTxt').textContent = p.serviceArea;
+      document.getElementById('bookAppointmentBtn').href = `booking.html?providerId=${p.id}`;
+
+      // Render Offered Services
+      const servicesList = document.getElementById('servicesList');
+      if (p.services && p.services.length > 0) {
+        servicesList.innerHTML = p.services.map(s => `
+          <div class="service-item-row">
+            <div>
+              <h4 style="font-size: var(--font-size-base); font-weight: 600; color: var(--color-primary);">${s.name}</h4>
+              <span style="font-size: var(--font-size-xs); color: var(--color-text-muted);">Est. duration: ${s.duration}</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 1rem;">
+              <span style="font-size: var(--font-size-base); font-weight: 700; color: var(--color-primary);">${formatCurrency(s.price)}</span>
+              <a href="booking.html?providerId=${p.id}&serviceId=${s.id}" class="btn btn-outline btn-sm">Select</a>
+            </div>
+          </div>
+        `).join('');
+      } else {
+        servicesList.innerHTML = `<p style="color: var(--color-text-muted);">General assistance starting at ${formatCurrency(p.startingPrice)}.</p>`;
+      }
+
+      // Render Reviews
+      const reviewsContainer = document.getElementById('reviewsContainer');
+      document.getElementById('reviewsCountBadge').innerHTML = `★ ${p.rating} (${p.reviewsCount})`;
+      if (p.reviews && p.reviews.length > 0) {
+        reviewsContainer.innerHTML = p.reviews.map(r => `
+          <div class="review-bubble">
+            <div class="review-meta">
+              <strong>${r.customerName}</strong>
+              <span>${r.date}</span>
+            </div>
+            <div style="margin-bottom: 0.4rem; color: #f59e0b; font-size: 0.9rem;">
+              ${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}
+            </div>
+            <p style="font-size: var(--font-size-sm); color: var(--color-text-main);">${r.comment}</p>
+          </div>
+        `).join('');
+      } else {
+        reviewsContainer.innerHTML = `<p style="font-size: var(--font-size-sm); color: var(--color-text-muted);">No reviews written yet. Be the first to book and review!</p>`;
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadProviderProfile);
+  </script>
+</body>
+</html>
