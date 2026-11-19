@@ -4,23 +4,25 @@
 # =============================================================================
 
 # Build stage
-FROM eclipse-adoptium:21-jdk-alpine AS builder
+FROM eclipse-adoptium:21-jdk AS builder
 WORKDIR /app
 
 # Copy Maven Wrapper and POM
 COPY pom.xml .
 COPY src ./src
 
-# Build JAR package (offline if m2 available or standard package)
-RUN apk add --no-cache maven && \
-    mvn clean package -DskipTests
+# Build JAR package
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends maven && \
+    mvn clean package -DskipTests && \
+    rm -rf /var/lib/apt/lists/*
 
 # Runtime stage
-FROM eclipse-adoptium:21-jre-alpine
+FROM eclipse-adoptium:21-jre
 WORKDIR /app
 
-# Non-root user for security
-RUN addgroup -S scgroup && adduser -S scuser -G scgroup
+# Non-root user for security (Ubuntu/Debian syntax)
+RUN groupadd -r scgroup && useradd -r -g scgroup scuser
 USER scuser
 
 # Copy JAR from builder
