@@ -6,15 +6,33 @@
 
 // Dynamically resolve REST API Base URL for local development and live cloud/production deployments
 const getApiBaseUrl = () => {
+  if (window.__SERVICE_CONNECT_API_URL__) return window.__SERVICE_CONNECT_API_URL__;
   const configured = localStorage.getItem('sc_api_url');
-  if (configured) return configured;
+  if (configured) return configured.replace(/\/+$/, '');
+
+  // Running directly on Spring Boot or with a reverse proxy / Nginx / Vercel rewrite
   if (window.location.port === '8080' || window.location.pathname.startsWith('/api')) {
     return '/api';
   }
-  if (window.location.hostname && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-    return `${window.location.protocol}//${window.location.hostname}:8080/api`;
+
+  // Local development fallback
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    return 'http://localhost:8080/api';
   }
-  return 'http://localhost:8080/api';
+
+  // Cloud deployment default: relative /api
+  return '/api';
+};
+
+// Global helper to configure live backend API host from browser console or settings
+window.setBackendUrl = (url) => {
+  if (!url) {
+    localStorage.removeItem('sc_api_url');
+  } else {
+    const formatted = url.trim().replace(/\/+$/, '');
+    localStorage.setItem('sc_api_url', formatted.endsWith('/api') ? formatted : `${formatted}/api`);
+  }
+  window.location.reload();
 };
 
 const API_BASE_URL = getApiBaseUrl();
