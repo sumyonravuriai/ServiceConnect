@@ -4,24 +4,22 @@
  * Includes rich realistic fallback data for standalone frontend previews.
  */
 
-// Dynamically resolve REST API Base URL for local development and live cloud/production deployments
+// Live Production Backend URL on Render
+const DEFAULT_BACKEND_API_URL = 'https://serviceconnect-backend-pg2o.onrender.com/api';
+
+// Dynamically resolve REST API Base URL
 const getApiBaseUrl = () => {
   if (window.__SERVICE_CONNECT_API_URL__) return window.__SERVICE_CONNECT_API_URL__;
   const configured = localStorage.getItem('sc_api_url');
   if (configured) return configured.replace(/\/+$/, '');
 
-  // Running directly on Spring Boot or with a reverse proxy / Nginx / Vercel rewrite
-  if (window.location.port === '8080' || window.location.pathname.startsWith('/api')) {
+  // Local Spring Boot development override if explicitly tested on port 8080
+  if (window.location.port === '8080') {
     return '/api';
   }
 
-  // Local development fallback
-  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-    return 'http://localhost:8080/api';
-  }
-
-  // Cloud deployment default: relative /api
-  return '/api';
+  // Default to live cloud backend on Render
+  return DEFAULT_BACKEND_API_URL;
 };
 
 // Global helper to configure live backend API host from browser console or settings
@@ -42,12 +40,14 @@ const Api = {
   backendAvailable: null,
 
   async checkBackend() {
-    if (this.backendAvailable !== null) return this.backendAvailable;
+    if (this.backendAvailable === true) return true;
     try {
-      const res = await fetch(`${API_BASE_URL}/health`, { method: 'GET', signal: AbortSignal.timeout(1200) });
+      // 25-second timeout to allow sleeping free-tier Render instances to complete cold-start
+      const res = await fetch(`${API_BASE_URL}/health`, { method: 'GET', signal: AbortSignal.timeout(25000) });
       this.backendAvailable = res.ok;
     } catch (e) {
-      this.backendAvailable = false;
+      this.backendAvailable = null;
+      return false;
     }
     return this.backendAvailable;
   },
@@ -62,25 +62,35 @@ const Api = {
   },
 
   async request(endpoint, options = {}) {
-    const isOnline = await this.checkBackend();
-    if (!isOnline) {
-      // Disallow fake auth and write operations when backend is offline
-      if (endpoint.startsWith('/auth') || endpoint.startsWith('/admin') || (options.method && options.method !== 'GET')) {
-        throw new Error('ServiceConnect backend is currently offline. Please ensure the Spring Boot server is running on port 8080.');
-      }
-      return this.mockHandler(endpoint, options);
-    }
-
     const url = `${API_BASE_URL}${endpoint}`;
     const headers = { ...this.getAuthHeaders(), ...(options.headers || {}) };
-    
-    const response = await fetch(url, { ...options, headers });
-    const data = await response.json().catch(() => null);
-    if (!response.ok) {
-      const errMsg = (data && data.message) ? data.message : `Server Error: HTTP ${response.status}`;
-      throw new Error(errMsg);
+
+    try {
+      const response = await fetch(url, { ...options, headers });
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        const errMsg = (data && data.message) ? data.message : `Server Error: HTTP ${response.status}`;
+        throw new Error(errMsg);
+      }
+      this.backendAvailable = true;
+      return data;
+    } catch (err) {
+      // If server returned an application error message (e.g. 401, 400), throw directly
+      if (err.message && !err.message.includes('Failed to fetch') && !err.message.includes('NetworkError') && !err.name.includes('AbortError')) {
+        throw err;
+      }
+
+      // If connection to Render failed or timed out:
+      if (endpoint.startsWith('/auth') || endpoint.startsWith('/admin') || (options.method && options.method !== 'GET')) {
+        throw new Error(
+          'Connecting to live backend (' + API_BASE_URL + ')... If the Render free server was asleep, it may take 20-40 seconds to wake up. Please wait a moment and try again.'
+        );
+      }
+
+      // Harmless preview fallback for GET browsing if backend is cold-starting
+      return this.mockHandler(endpoint, options);
     }
-    return data;
   },
 
   // -------------------------------------------------------------
