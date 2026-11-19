@@ -50,4 +50,30 @@ public class ReviewDao {
         """;
         return jdbcTemplate.query(sql, reviewRowMapper, providerId);
     }
+
+    public List<Review> findAll() {
+        String sql = """
+            SELECT r.*, u.full_name AS customer_name
+            FROM reviews r
+            JOIN users u ON r.customer_id = u.id
+            ORDER BY r.created_at DESC
+        """;
+        return jdbcTemplate.query(sql, reviewRowMapper);
+    }
+
+    public java.util.Optional<Review> findById(Long id) {
+        String sql = """
+            SELECT r.*, u.full_name AS customer_name
+            FROM reviews r
+            JOIN users u ON r.customer_id = u.id
+            WHERE r.id = ?
+        """;
+        var list = jdbcTemplate.query(sql, reviewRowMapper, id);
+        return list.isEmpty() ? java.util.Optional.empty() : java.util.Optional.of(list.get(0));
+    }
+
+    public int deleteById(Long id) {
+        String sql = "DELETE FROM reviews WHERE id = ?";
+        return jdbcTemplate.update(sql, id);
+    }
 }

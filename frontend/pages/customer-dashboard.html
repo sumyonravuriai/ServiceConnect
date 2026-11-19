@@ -240,14 +240,11 @@
     let activeBookingIdForChat = null;
 
     async function initDashboard() {
-      let user = Auth.getUser();
-      if (!user) {
-        user = { id: 1, email: 'anita@example.com', fullName: 'Anita Desai', phone: '+91 98765 43210', role: 'CUSTOMER' };
-        Auth.setUser(user);
-      }
+      const user = Auth.requireRole(['CUSTOMER', 'ADMIN']);
+      if (!user) return;
 
       document.getElementById('userFullName').textContent = user.fullName || user.email;
-      document.getElementById('userAvatar').textContent = (user.fullName || 'A').charAt(0).toUpperCase();
+      document.getElementById('userAvatar').textContent = (user.fullName || 'C').charAt(0).toUpperCase();
 
       await loadBookings();
       await loadFavourites();
@@ -275,11 +272,17 @@
     }
 
     async function loadBookings() {
-      const res = await Api.request('/bookings');
-      if (res && res.data) {
-        allBookings = res.data;
-        updateCountsAndStats();
-        renderBookingsTable();
+      try {
+        const user = Auth.getUser();
+        const endpoint = user ? `/bookings/customer/${user.id}` : '/bookings';
+        const res = await Api.request(endpoint);
+        if (res && res.data) {
+          allBookings = res.data;
+          updateCountsAndStats();
+          renderBookingsTable();
+        }
+      } catch (err) {
+        console.warn('Could not load bookings:', err);
       }
     }
 

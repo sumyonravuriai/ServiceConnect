@@ -161,30 +161,7 @@
               </tr>
             </thead>
             <tbody id="admApprovalsTableBody">
-              <tr>
-                <td><strong>Vikram Patel</strong></td>
-                <td>Patel Painting Solutions</td>
-                <td>Painter</td>
-                <td>6 years</td>
-                <td>Downtown, South Zone</td>
-                <td><span class="badge badge-pending">Pending Review</span></td>
-                <td style="text-align: right;">
-                  <button class="btn btn-primary btn-sm" onclick="approveProvider(this)">Approve</button>
-                  <button class="btn btn-danger btn-sm" onclick="rejectProvider(this)">Reject</button>
-                </td>
-              </tr>
-              <tr>
-                <td><strong>Pooja Verma</strong></td>
-                <td>Verma Home Culinary Chef</td>
-                <td>Cooking Services</td>
-                <td>4 years</td>
-                <td>Westside, North Hub</td>
-                <td><span class="badge badge-pending">Pending Review</span></td>
-                <td style="text-align: right;">
-                  <button class="btn btn-primary btn-sm" onclick="approveProvider(this)">Approve</button>
-                  <button class="btn btn-danger btn-sm" onclick="rejectProvider(this)">Reject</button>
-                </td>
-              </tr>
+              <tr><td colspan="7" style="text-align: center; padding: 2.5rem; color: var(--color-text-muted);">Loading pending provider applications...</td></tr>
             </tbody>
           </table>
         </div>
@@ -235,36 +212,7 @@
               </tr>
             </thead>
             <tbody id="admUsersTableBody">
-              <tr>
-                <td>#USR-101</td>
-                <td>Anita Desai</td>
-                <td>anita@example.com</td>
-                <td><span class="badge badge-completed">CUSTOMER</span></td>
-                <td><span class="badge badge-verified">Active</span></td>
-                <td style="text-align: right;">
-                  <button class="btn btn-outline btn-sm" onclick="toggleSuspend(this)">Suspend</button>
-                </td>
-              </tr>
-              <tr>
-                <td>#USR-102</td>
-                <td>Rajesh Sharma</td>
-                <td>rajesh@example.com</td>
-                <td><span class="badge badge-accepted">PROVIDER</span></td>
-                <td><span class="badge badge-verified">Active</span></td>
-                <td style="text-align: right;">
-                  <button class="btn btn-outline btn-sm" onclick="toggleSuspend(this)">Suspend</button>
-                </td>
-              </tr>
-              <tr>
-                <td>#USR-103</td>
-                <td>David Miller</td>
-                <td>david@example.com</td>
-                <td><span class="badge badge-accepted">PROVIDER</span></td>
-                <td><span class="badge badge-verified">Active</span></td>
-                <td style="text-align: right;">
-                  <button class="btn btn-outline btn-sm" onclick="toggleSuspend(this)">Suspend</button>
-                </td>
-              </tr>
+              <tr><td colspan="6" style="text-align: center; padding: 2.5rem; color: var(--color-text-muted);">Loading user directory...</td></tr>
             </tbody>
           </table>
         </div>
@@ -301,78 +249,192 @@
   <script src="../js/main.js"></script>
   <script>
     async function initAdminDashboard() {
-      let user = Auth.getUser();
-      if (!user || user.role !== 'ADMIN') {
-        user = { id: 99, email: 'admin@serviceconnect.com', fullName: 'System Admin', role: 'ADMIN' };
-        Auth.setUser(user);
-      }
+      const user = Auth.requireRole(['ADMIN']);
+      if (!user) return;
 
       await loadAdminStats();
+      await loadPendingApprovals();
+      await loadAdminUsers();
       await loadAdminBookings();
       await loadAdminCategories();
     }
 
     async function loadAdminStats() {
-      const res = await Api.request('/admin/stats');
-      if (res && res.data) {
-        document.getElementById('admCustomers').textContent = res.data.totalCustomers;
-        document.getElementById('admProviders').textContent = res.data.totalProviders;
-        document.getElementById('admBookings').textContent = res.data.totalBookings;
-        document.getElementById('admApprovals').textContent = res.data.pendingApprovals;
+      try {
+        const res = await Api.request('/admin/stats');
+        if (res && res.data) {
+          document.getElementById('admCustomers').textContent = res.data.totalCustomers || 0;
+          document.getElementById('admProviders').textContent = res.data.totalProviders || 0;
+          document.getElementById('admBookings').textContent = res.data.totalBookings || 0;
+          document.getElementById('admApprovals').textContent = res.data.pendingApprovals || 0;
+        }
+      } catch (err) {
+        console.warn('Could not load stats:', err);
+      }
+    }
+
+    async function loadPendingApprovals() {
+      const tbody = document.getElementById('admApprovalsTableBody');
+      try {
+        const res = await Api.request('/admin/providers/pending');
+        if (!res || !res.data || res.data.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 3rem; color: var(--color-text-muted);">✓ No pending provider applications awaiting review.</td></tr>`;
+          return;
+        }
+        tbody.innerHTML = res.data.map(p => `
+          <tr>
+            <td><strong>${p.providerName || p.businessName}</strong></td>
+            <td>${p.businessName}</td>
+            <td><span class="badge badge-pending">${p.categoryName || 'Service'}</span></td>
+            <td>${p.experienceYears || 1} years</td>
+            <td>${p.serviceArea || 'Local Area'}</td>
+            <td><span class="badge badge-pending">${p.approvalStatus || 'PENDING'}</span></td>
+            <td style="text-align: right;">
+              <button class="btn btn-primary btn-sm" onclick="approveProviderById(${p.id})">Approve</button>
+              <button class="btn btn-danger btn-sm" onclick="rejectProviderById(${p.id})">Reject</button>
+            </td>
+          </tr>
+        `).join('');
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 2rem; color: var(--status-cancelled);">Failed to load pending approvals: ${err.message}</td></tr>`;
+      }
+    }
+
+    async function approveProviderById(id) {
+      if (!confirm('Approve this service provider profile and make them publicly discoverable?')) return;
+      try {
+        const res = await Api.request(`/admin/providers/${id}/approve`, { method: 'PUT' });
+        showToast(res.message || 'Provider approved and notified via email!', 'success');
+        await loadPendingApprovals();
+        await loadAdminStats();
+      } catch (err) {
+        showToast(err.message || 'Approval failed', 'error');
+      }
+    }
+
+    async function rejectProviderById(id) {
+      const reason = prompt('Enter rejection reason to notify provider (e.g., Incomplete trade license, unverifiable service address):');
+      if (reason === null) return;
+      try {
+        const res = await Api.request(`/admin/providers/${id}/reject`, {
+          method: 'PUT',
+          body: JSON.stringify({ reason: reason || 'Documentation requirements not met' })
+        });
+        showToast(res.message || 'Provider application rejected and notified.', 'info');
+        await loadPendingApprovals();
+        await loadAdminStats();
+      } catch (err) {
+        showToast(err.message || 'Rejection failed', 'error');
+      }
+    }
+
+    async function loadAdminUsers() {
+      const tbody = document.getElementById('admUsersTableBody');
+      try {
+        const res = await Api.request('/admin/users');
+        if (!res || !res.data || res.data.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 3rem; color: var(--color-text-muted);">No user accounts recorded.</td></tr>`;
+          return;
+        }
+        tbody.innerHTML = res.data.map(u => {
+          const isActive = (u.status === 'ACTIVE');
+          const isSuspended = (u.status === 'SUSPENDED');
+          return `
+            <tr>
+              <td><span class="ref-tag">#USR-${u.id}</span></td>
+              <td><strong>${u.fullName || 'User'}</strong></td>
+              <td>${u.email}</td>
+              <td><span class="badge ${u.role === 'ADMIN' ? 'badge-progress' : (u.role === 'PROVIDER' ? 'badge-accepted' : 'badge-completed')}">${u.role}</span></td>
+              <td><span class="badge ${isActive ? 'badge-verified' : 'badge-cancelled'}">${u.status}</span></td>
+              <td style="text-align: right;">
+                ${u.role !== 'ADMIN' ? `
+                  <button class="btn btn-sm ${isActive ? 'btn-outline' : 'btn-primary'}" onclick="toggleUserStatus(${u.id}, '${u.status}')">
+                    ${isActive ? 'Suspend' : 'Reactivate'}
+                  </button>
+                ` : '<span style="font-size: var(--font-size-xs); color: var(--color-text-muted);">Protected</span>'}
+              </td>
+            </tr>
+          `;
+        }).join('');
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 2rem; color: var(--status-cancelled);">Failed to load user directory: ${err.message}</td></tr>`;
+      }
+    }
+
+    async function toggleUserStatus(userId, currentStatus) {
+      const newStatus = (currentStatus === 'ACTIVE') ? 'SUSPENDED' : 'ACTIVE';
+      const actionLabel = (newStatus === 'SUSPENDED') ? 'suspend' : 'reactivate';
+      if (!confirm(`Are you sure you want to ${actionLabel} account #USR-${userId}?`)) return;
+      try {
+        const res = await Api.request(`/admin/users/${userId}/status?status=${newStatus}`, { method: 'PUT' });
+        showToast(res.message || `User account #${userId} ${newStatus.toLowerCase()}`, 'success');
+        await loadAdminUsers();
+      } catch (err) {
+        showToast(err.message || 'Failed to update user status', 'error');
       }
     }
 
     async function loadAdminBookings() {
-      const res = await Api.request('/bookings');
-      if (res && res.data) {
-        const bookings = res.data;
+      const recBody = document.getElementById('admRecentBookingsBody');
+      const allBody = document.getElementById('admAllBookingsTableBody');
+      try {
+        const res = await Api.request('/bookings');
+        const bookings = (res && res.data) ? res.data : [];
 
-        // Render Recent Activity
-        const recBody = document.getElementById('admRecentBookingsBody');
-        recBody.innerHTML = bookings.slice(0, 5).map(b => `
-          <tr>
-            <td><span class="ref-tag">${b.reference}</span></td>
-            <td>${b.customerName}</td>
-            <td>${b.providerName}</td>
-            <td>${b.serviceName}</td>
-            <td>${b.bookingDate}</td>
-            <td><span class="badge ${b.status === 'COMPLETED' ? 'badge-completed' : (b.status === 'ACCEPTED' ? 'badge-accepted' : 'badge-pending')}">${b.status}</span></td>
-            <td><strong>${formatCurrency(b.price)}</strong></td>
-          </tr>
-        `).join('');
+        if (bookings.length === 0) {
+          const emptyRow = `<tr><td colspan="7" style="text-align: center; padding: 3rem; color: var(--color-text-muted);">No appointments recorded on platform yet.</td></tr>`;
+          if (recBody) recBody.innerHTML = emptyRow;
+          if (allBody) allBody.innerHTML = emptyRow;
+          return;
+        }
 
-        // Render All Bookings
-        const allBody = document.getElementById('admAllBookingsTableBody');
-        allBody.innerHTML = bookings.map(b => `
-          <tr>
-            <td><span class="ref-tag">${b.reference}</span></td>
-            <td>${b.customerName}</td>
-            <td>${b.providerName}</td>
-            <td>${b.serviceName}</td>
-            <td>${b.bookingDate} (${b.timeSlot})</td>
-            <td><span class="badge ${b.status === 'COMPLETED' ? 'badge-completed' : (b.status === 'ACCEPTED' ? 'badge-accepted' : 'badge-pending')}">${b.status}</span></td>
-            <td><strong>${formatCurrency(b.price)}</strong></td>
-          </tr>
-        `).join('');
+        const renderRows = (list) => list.map(b => {
+          let badgeClass = 'badge-pending';
+          if (b.status === 'ACCEPTED') badgeClass = 'badge-accepted';
+          if (b.status === 'IN_PROGRESS') badgeClass = 'badge-progress';
+          if (b.status === 'COMPLETED') badgeClass = 'badge-completed';
+          if (b.status === 'CANCELLED' || b.status === 'REJECTED') badgeClass = 'badge-cancelled';
+
+          return `
+            <tr>
+              <td><span class="ref-tag">${b.bookingReference || b.reference}</span></td>
+              <td>${b.customerName}</td>
+              <td>${b.providerName || 'Provider'}</td>
+              <td>${b.serviceName || 'Service'}</td>
+              <td>${b.bookingDate} (${b.timeSlot})</td>
+              <td><span class="badge ${badgeClass}">${(b.status || 'PENDING').replace('_', ' ')}</span></td>
+              <td><strong>${formatCurrency(b.price)}</strong></td>
+            </tr>
+          `;
+        }).join('');
+
+        if (recBody) recBody.innerHTML = renderRows(bookings.slice(0, 5));
+        if (allBody) allBody.innerHTML = renderRows(bookings);
+      } catch (err) {
+        console.warn('Could not load bookings:', err);
       }
     }
 
     async function loadAdminCategories() {
-      const res = await Api.request('/categories');
-      if (res && res.data) {
-        const tbody = document.getElementById('admCategoriesTableBody');
-        tbody.innerHTML = res.data.map(c => `
-          <tr>
-            <td style="font-size: 1.35rem; width: 40px;">${c.icon}</td>
-            <td><strong>${c.name}</strong></td>
-            <td><code style="font-size: var(--font-size-xs); background: var(--color-surface-alt); padding: 0.2rem 0.4rem; border-radius: 4px;">${c.slug}</code></td>
-            <td style="color: var(--color-text-muted); font-size: var(--font-size-xs);">${c.description}</td>
-            <td><span class="badge badge-completed">Active</span></td>
-            <td style="text-align: right;">
-              <button class="btn btn-outline btn-sm" onclick="showToast('Edit Category mode', 'info')">Edit</button>
-            </td>
-          </tr>
-        `).join('');
+      const tbody = document.getElementById('admCategoriesTableBody');
+      try {
+        const res = await Api.request('/categories');
+        if (res && res.data) {
+          tbody.innerHTML = res.data.map(c => `
+            <tr>
+              <td style="font-size: 1.35rem; width: 40px;">${c.icon}</td>
+              <td><strong>${c.name}</strong></td>
+              <td><code style="font-size: var(--font-size-xs); background: var(--color-surface-alt); padding: 0.2rem 0.4rem; border-radius: 4px;">${c.slug}</code></td>
+              <td style="color: var(--color-text-muted); font-size: var(--font-size-xs);">${c.description}</td>
+              <td><span class="badge badge-completed">Active</span></td>
+              <td style="text-align: right;">
+                <button class="btn btn-outline btn-sm" onclick="showToast('Catalog category configured', 'info')">Active</button>
+              </td>
+            </tr>
+          `).join('');
+        }
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--color-text-muted);">Failed to load categories: ${err.message}</td></tr>`;
       }
     }
 
@@ -385,34 +447,6 @@
       document.getElementById('admSectionCategories').style.display = (tab === 'categories') ? 'block' : 'none';
       document.getElementById('admSectionUsers').style.display = (tab === 'users') ? 'block' : 'none';
       document.getElementById('admSectionAllBookings').style.display = (tab === 'allBookings') ? 'block' : 'none';
-    }
-
-    function approveProvider(btn) {
-      const row = btn.closest('tr');
-      row.style.opacity = '0.5';
-      btn.disabled = true;
-      showToast('Provider credentials verified and account activated!', 'success');
-      setTimeout(() => row.remove(), 500);
-    }
-
-    function rejectProvider(btn) {
-      const row = btn.closest('tr');
-      row.style.opacity = '0.5';
-      btn.disabled = true;
-      showToast('Provider registration rejected', 'info');
-      setTimeout(() => row.remove(), 500);
-    }
-
-    function toggleSuspend(btn) {
-      if (btn.textContent === 'Suspend') {
-        btn.textContent = 'Activate';
-        btn.className = 'btn btn-primary btn-sm';
-        showToast('User account suspended', 'error');
-      } else {
-        btn.textContent = 'Suspend';
-        btn.className = 'btn btn-outline btn-sm';
-        showToast('User account activated', 'success');
-      }
     }
 
     function openAddCategoryModal() {

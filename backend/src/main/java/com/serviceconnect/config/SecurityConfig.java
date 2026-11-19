@@ -18,6 +18,12 @@ import java.util.List;
 @EnableWebSecurity
 public class SecurityConfig {
 
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
+        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+    }
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -36,10 +42,14 @@ public class SecurityConfig {
                     "/css/**",
                     "/js/**",
                     "/assets/**",
-                    "/api/**"
+                    "/api/auth/**",
+                    "/api/categories/**",
+                    "/api/providers/**",
+                    "/api/health"
                 ).permitAll()
                 .anyRequest().permitAll()
-            );
+            )
+            .addFilterBefore(jwtAuthenticationFilter, org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

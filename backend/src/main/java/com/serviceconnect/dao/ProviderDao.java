@@ -39,6 +39,10 @@ public class ProviderDao {
         p.setProfileImage(rs.getString("profile_image"));
         p.setVerified(rs.getBoolean("is_verified"));
         p.setAvailable(rs.getBoolean("is_available"));
+        try {
+            p.setApprovalStatus(rs.getString("approval_status"));
+            p.setRejectionReason(rs.getString("rejection_reason"));
+        } catch (Exception ignored) {}
         p.setRatingAvg(rs.getBigDecimal("rating_avg"));
         p.setRatingCount(rs.getInt("rating_count"));
         p.setStartingPrice(rs.getBigDecimal("starting_price"));
@@ -51,7 +55,7 @@ public class ProviderDao {
             FROM provider_profiles p
             JOIN users u ON p.user_id = u.id
             JOIN service_categories sc ON p.category_id = sc.id
-            WHERE u.status = 'ACTIVE'
+            WHERE u.status = 'ACTIVE' AND p.approval_status = 'APPROVED'
         """);
 
         List<Object> params = new ArrayList<>();
@@ -111,8 +115,8 @@ public class ProviderDao {
     public Long create(ProviderProfile profile) {
         String sql = """
             INSERT INTO provider_profiles (user_id, business_name, category_id, bio, experience_years, 
-                service_area, profile_image, is_verified, is_available, rating_avg, rating_count, starting_price)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                service_area, profile_image, is_verified, is_available, approval_status, rating_avg, rating_count, starting_price)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """;
         KeyHolder keyHolder = new GeneratedKeyHolder();
 
@@ -127,9 +131,10 @@ public class ProviderDao {
             ps.setString(7, profile.getProfileImage());
             ps.setBoolean(8, profile.isVerified());
             ps.setBoolean(9, profile.isAvailable());
-            ps.setBigDecimal(10, BigDecimal.ZERO);
-            ps.setInt(11, 0);
-            ps.setBigDecimal(12, profile.getStartingPrice() != null ? profile.getStartingPrice() : BigDecimal.valueOf(350));
+            ps.setString(10, profile.getApprovalStatus() != null ? profile.getApprovalStatus() : "PENDING_APPROVAL");
+            ps.setBigDecimal(11, BigDecimal.ZERO);
+            ps.setInt(12, 0);
+            ps.setBigDecimal(13, profile.getStartingPrice() != null ? profile.getStartingPrice() : BigDecimal.valueOf(350));
             return ps;
         }, keyHolder);
 
@@ -137,9 +142,28 @@ public class ProviderDao {
         return key != null ? key.longValue() : null;
     }
 
+    public int updateApprovalStatus(Long id, String status, String reason) {
+        boolean verified = "APPROVED".equalsIgnoreCase(status);
+        String sql = "UPDATE provider_profiles SET approval_status = ?, is_verified = ?, rejection_reason = ? WHERE id = ?";
+        return jdbcTemplate.update(sql, status, verified, reason, id);
+    }
+
+    public List<ProviderProfile> findPendingApproval() {
+        String sql = """
+            SELECT p.*, sc.name AS category_name, u.full_name AS provider_name, u.phone
+            FROM provider_profiles p
+            JOIN users u ON p.user_id = u.id
+            JOIN service_categories sc ON p.category_id = sc.id
+            WHERE p.approval_status = 'PENDING_APPROVAL'
+            ORDER BY p.created_at ASC
+        """;
+        return jdbcTemplate.query(sql, providerRowMapper);
+    }
+
     public int updateVerification(Long id, boolean isVerified) {
-        String sql = "UPDATE provider_profiles SET is_verified = ? WHERE id = ?";
-        return jdbcTemplate.update(sql, isVerified, id);
+        String status = isVerified ? "APPROVED" : "PENDING_APPROVAL";
+        String sql = "UPDATE provider_profiles SET is_verified = ?, approval_status = ? WHERE id = ?";
+        return jdbcTemplate.update(sql, isVerified, status, id);
     }
 
     public void updateRatings(Long providerId) {
@@ -182,7 +206,7 @@ public class ProviderDao {
     }
 
     public int countPending() {
-        String sql = "SELECT COUNT(*) FROM provider_profiles WHERE is_verified = FALSE";
+        String sql = "SELECT COUNT(*) FROM provider_profiles WHERE approval_status = 'PENDING_APPROVAL'";
         Integer count = jdbcTemplate.queryForObject(sql, Integer.class);
         return count != null ? count : 0;
     }

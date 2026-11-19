@@ -83,9 +83,20 @@
           <p>Review customer appointments, dispatch technicians and track jobs.</p>
         </div>
         <div>
-          <button class="btn btn-outline" onclick="showToast('Your availability is active and public', 'info')">
-            <span style="color: var(--status-completed);">●</span> Accepting Bookings
+          <button class="btn btn-outline" id="provStatusBadgeBtn" onclick="showToast('Your provider availability status', 'info')">
+            <span id="provStatusDot" style="color: var(--status-completed);">●</span> <span id="provStatusText">Accepting Bookings</span>
           </button>
+        </div>
+      </div>
+
+      <!-- Provider Verification & Approval Status Banner -->
+      <div id="providerApprovalBanner" style="display: none; padding: 1.15rem 1.35rem; border-radius: var(--radius-md); margin-bottom: 1.5rem; border: 1px solid transparent;">
+        <div style="display: flex; align-items: flex-start; gap: 0.85rem;">
+          <div id="approvalBannerIcon" style="font-size: 1.5rem;"></div>
+          <div>
+            <div id="approvalBannerTitle" style="font-weight: 800; font-size: var(--font-size-base); margin-bottom: 0.25rem;"></div>
+            <div id="approvalBannerText" style="font-size: var(--font-size-xs); line-height: 1.6;"></div>
+          </div>
         </div>
       </div>
 
@@ -271,26 +282,83 @@
     let activeJobIdForChat = null;
 
     async function initProviderDashboard() {
-      let user = Auth.getUser();
-      if (!user || user.role !== 'PROVIDER') {
-        user = { id: 2, email: 'rajesh@example.com', fullName: 'Rajesh Sharma', role: 'PROVIDER' };
-        Auth.setUser(user);
-      }
+      const user = Auth.requireRole(['PROVIDER']);
+      if (!user) return;
 
-      const pRes = await Api.request('/providers/1');
-      if (pRes && pRes.data) {
-        currentProviderInfo = pRes.data;
-        document.getElementById('provBusinessName').textContent = currentProviderInfo.businessName;
-        document.getElementById('provAvatar').textContent = currentProviderInfo.name.charAt(0);
-        document.getElementById('statProvRating').textContent = `★ ${currentProviderInfo.rating}`;
-        renderProviderServices(currentProviderInfo.services || []);
-        renderProviderReviews(currentProviderInfo.reviews || []);
+      document.getElementById('provBusinessName').textContent = user.fullName || 'Provider Account';
+      document.getElementById('provAvatar').textContent = (user.fullName || 'P').charAt(0).toUpperCase();
+
+      try {
+        let pRes = await Api.request(`/providers/user/${user.id}`).catch(() => null);
+        if (!pRes || !pRes.data) {
+          pRes = await Api.request('/providers/1').catch(() => null);
+        }
+
+        if (pRes && pRes.data) {
+          currentProviderInfo = pRes.data;
+          document.getElementById('provBusinessName').textContent = currentProviderInfo.businessName || currentProviderInfo.name;
+          document.getElementById('provAvatar').textContent = (currentProviderInfo.name || 'P').charAt(0).toUpperCase();
+          document.getElementById('statProvRating').textContent = `★ ${currentProviderInfo.rating || 0.0}`;
+          renderProviderServices(currentProviderInfo.services || []);
+          renderProviderReviews(currentProviderInfo.reviews || []);
+          updateApprovalBanner(currentProviderInfo.approvalStatus, currentProviderInfo.rejectionReason);
+        }
+      } catch (err) {
+        console.warn('Could not load provider profile details:', err);
       }
 
       await loadProviderBookings();
 
       // Subscribe to live SSE events for incoming jobs & customer chat messages
       Api.subscribeToLiveNotifications(user.id, handleProviderNotification);
+    }
+
+    function updateApprovalBanner(status, reason) {
+      const banner = document.getElementById('providerApprovalBanner');
+      const icon = document.getElementById('approvalBannerIcon');
+      const title = document.getElementById('approvalBannerTitle');
+      const text = document.getElementById('approvalBannerText');
+      const dot = document.getElementById('provStatusDot');
+      const stText = document.getElementById('provStatusText');
+
+      if (!banner) return;
+      status = (status || 'APPROVED').toUpperCase();
+
+      if (status === 'PENDING_APPROVAL') {
+        banner.style.display = 'block';
+        banner.style.backgroundColor = 'rgba(245, 158, 11, 0.12)';
+        banner.style.borderColor = '#f59e0b';
+        banner.style.color = '#92400e';
+        icon.textContent = '⏳';
+        title.textContent = 'Provider Account Pending Administrative Review';
+        text.textContent = 'Your business registration has been submitted and is currently undergoing credential verification. You can configure your services, pricing, and availability below. Your profile will automatically become discoverable in customer search results once approved by an administrator.';
+        dot.style.color = '#f59e0b';
+        stText.textContent = 'Pending Admin Approval';
+      } else if (status === 'REJECTED') {
+        banner.style.display = 'block';
+        banner.style.backgroundColor = 'rgba(239, 68, 68, 0.12)';
+        banner.style.borderColor = '#ef4444';
+        banner.style.color = '#991b1b';
+        icon.textContent = '⚠️';
+        title.textContent = 'Registration Verification Unsuccessful';
+        text.textContent = `Reason: ${reason || 'Incomplete documentation or unverifiable service location.'} Please update your business details or reach out to support@serviceconnect.com for assistance.`;
+        dot.style.color = '#ef4444';
+        stText.textContent = 'Application Rejected';
+      } else if (status === 'SUSPENDED') {
+        banner.style.display = 'block';
+        banner.style.backgroundColor = 'rgba(239, 68, 68, 0.12)';
+        banner.style.borderColor = '#ef4444';
+        banner.style.color = '#991b1b';
+        icon.textContent = '⛔';
+        title.textContent = 'Provider Account Suspended';
+        text.textContent = 'Your provider account has been temporarily suspended by an administrator. Please contact compliance@serviceconnect.com.';
+        dot.style.color = '#ef4444';
+        stText.textContent = 'Account Suspended';
+      } else {
+        banner.style.display = 'none';
+        dot.style.color = 'var(--status-completed)';
+        stText.textContent = 'Accepting Bookings';
+      }
     }
 
     function handleProviderNotification(eventType, data) {
@@ -323,11 +391,17 @@
     }
 
     async function loadProviderBookings() {
-      const res = await Api.request('/bookings');
-      if (res && res.data) {
-        providerJobs = res.data;
-        updateProviderCounts();
-        renderJobsTable();
+      try {
+        const provId = (currentProviderInfo && currentProviderInfo.id) ? currentProviderInfo.id : null;
+        const endpoint = provId ? `/bookings/provider/${provId}` : `/bookings`;
+        const res = await Api.request(endpoint);
+        if (res && res.data) {
+          providerJobs = res.data;
+          updateProviderCounts();
+          renderJobsTable();
+        }
+      } catch (err) {
+        console.warn('Could not load provider bookings:', err);
       }
     }
 

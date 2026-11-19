@@ -3,6 +3,7 @@ package com.serviceconnect.service;
 import com.serviceconnect.dao.BookingDao;
 import com.serviceconnect.dao.ProviderDao;
 import com.serviceconnect.dao.ReviewDao;
+import com.serviceconnect.dao.UserDao;
 import com.serviceconnect.dto.BookingRequest;
 import com.serviceconnect.dto.ReviewRequest;
 import com.serviceconnect.exception.BadRequestException;
@@ -24,13 +25,18 @@ public class BookingService {
     private final BookingDao bookingDao;
     private final ProviderDao providerDao;
     private final ReviewDao reviewDao;
+    private final UserDao userDao;
     private final NotificationService notificationService;
+    private final EmailService emailService;
 
-    public BookingService(BookingDao bookingDao, ProviderDao providerDao, ReviewDao reviewDao, NotificationService notificationService) {
+    public BookingService(BookingDao bookingDao, ProviderDao providerDao, ReviewDao reviewDao,
+                          UserDao userDao, NotificationService notificationService, EmailService emailService) {
         this.bookingDao = bookingDao;
         this.providerDao = providerDao;
         this.reviewDao = reviewDao;
+        this.userDao = userDao;
         this.notificationService = notificationService;
+        this.emailService = emailService;
     }
 
     @Transactional
@@ -41,9 +47,13 @@ public class BookingService {
             throw new BadRequestException("The selected time slot (" + req.getTimeSlot() + ") is already booked on this date. Please pick another available time slot.");
         }
 
-        // 2. Fetch provider starting price or given price
+        // 2. Fetch provider and ensure approved status
         ProviderProfile prov = providerDao.findById(req.getProviderId())
                 .orElseThrow(() -> new ResourceNotFoundException("Provider not found with ID " + req.getProviderId()));
+
+        if (!"APPROVED".equalsIgnoreCase(prov.getApprovalStatus()) || !prov.isAvailable()) {
+            throw new BadRequestException("This service provider is not currently approved or available for public bookings.");
+        }
 
         BigDecimal price = (req.getPrice() != null && req.getPrice().compareTo(BigDecimal.ZERO) > 0)
                 ? req.getPrice()
@@ -80,6 +90,14 @@ public class BookingService {
                     "price", b.getPrice(),
                     "address", b.getCustomerAddress()
             ));
+
+            // Real email notifications
+            userDao.findById(created.getCustomerId()).ifPresent(u -> {
+                emailService.sendBookingConfirmation(u.getEmail(), created.getCustomerName(), created);
+            });
+            userDao.findById(prov.getUserId()).ifPresent(pu -> {
+                emailService.sendNewBookingRequestToProvider(pu.getEmail(), prov.getProviderName(), created);
+            });
         } catch (Exception e) {
             // Log but don't fail booking creation
         }
@@ -141,6 +159,17 @@ public class BookingService {
             ProviderProfile prov = providerDao.findById(updated.getProviderId()).orElse(null);
             Long providerUserId = prov != null ? prov.getUserId() : null;
             notificationService.broadcastBookingStatus(updated.getCustomerId(), providerUserId, updated.getBookingReference(), target, reason);
+
+            // Real email notification to customer
+            userDao.findById(updated.getCustomerId()).ifPresent(u -> {
+                emailService.sendBookingStatusUpdate(u.getEmail(), updated.getCustomerName(), updated, target, reason);
+            });
+            // Real email notification to provider
+            if (providerUserId != null) {
+                userDao.findById(providerUserId).ifPresent(pu -> {
+                    emailService.sendBookingStatusUpdate(pu.getEmail(), prov.getProviderName(), updated, target, reason);
+                });
+            }
         } catch (Exception e) {
             // Non-blocking notification dispatch
         }

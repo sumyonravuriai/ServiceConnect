@@ -1,9 +1,6 @@
 package com.serviceconnect.controller;
 
-import com.serviceconnect.dto.ApiResponse;
-import com.serviceconnect.dto.AuthRequest;
-import com.serviceconnect.dto.CustomerRegisterRequest;
-import com.serviceconnect.dto.ProviderRegisterRequest;
+import com.serviceconnect.dto.*;
 import com.serviceconnect.service.AuthService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -36,6 +33,29 @@ public class AuthController {
     @PostMapping("/register/provider")
     public ResponseEntity<ApiResponse<Map<String, Object>>> registerProvider(@Valid @RequestBody ProviderRegisterRequest request) {
         Map<String, Object> data = authService.registerProvider(request);
-        return ResponseEntity.ok(ApiResponse.ok("Provider registered successfully. Profile is pending admin verification.", data));
+        return ResponseEntity.ok(ApiResponse.ok("Provider registered successfully. Verification required.", data));
+    }
+
+    @PostMapping("/verify-email")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> verifyEmail(@Valid @RequestBody VerifyEmailRequest request) {
+        Map<String, Object> data = authService.verifyEmail(request);
+        return ResponseEntity.ok(ApiResponse.ok("Email verified successfully", data));
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        Map<String, Object> data = authService.forgotPassword(request);
+        return ResponseEntity.ok(ApiResponse.ok("Password reset request processed", data));
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        Map<String, Object> data = authService.resetPassword(request);
+        return ResponseEntity.ok(ApiResponse.ok("Password reset successfully", data));
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponse<String>> logout() {
+        return ResponseEntity.ok(ApiResponse.ok("Logged out successfully", "Session cleared"));
     }
 }

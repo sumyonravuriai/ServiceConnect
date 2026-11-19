@@ -9,7 +9,8 @@ public class User {
     private String fullName;
     private String phone;
     private String role; // CUSTOMER, PROVIDER, ADMIN
-    private String status; // ACTIVE, PENDING, SUSPENDED
+    private String status; // ACTIVE, PENDING_VERIFICATION, SUSPENDED
+    private boolean emailVerified;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -35,6 +36,9 @@ public class User {
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+
+    public boolean isEmailVerified() { return emailVerified; }
+    public void setEmailVerified(boolean emailVerified) { this.emailVerified = emailVerified; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

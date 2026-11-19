@@ -405,6 +405,15 @@
     }
 
     async function submitBookingOrder() {
+      const currentUser = Auth.getUser();
+      if (!currentUser) {
+        showToast('Please sign in to complete your appointment booking.', 'info');
+        setTimeout(() => {
+          window.location.href = `login.html?redirect=booking.html?id=${providerId}`;
+        }, 1400);
+        return;
+      }
+
       const confirmBtn = document.getElementById('confirmBookingBtn');
       confirmBtn.disabled = true;
       confirmBtn.textContent = 'Processing Booking...';
@@ -412,7 +421,7 @@
       try {
         const payload = {
           ...bookingState,
-          customerId: Auth.getUser() ? Auth.getUser().id : 1
+          customerId: currentUser.id
         };
 
         const res = await Api.request('/bookings', {
@@ -427,7 +436,7 @@
           document.getElementById('step5').classList.remove('active');
           const successStep = document.getElementById('stepSuccess');
           successStep.classList.add('active');
-          document.getElementById('confirmedRefBadge').textContent = res.data.reference;
+          document.getElementById('confirmedRefBadge').textContent = res.data.bookingReference || res.data.reference;
           showToast('Appointment booked successfully!', 'success');
         } else {
           showToast(res.message || 'Failed to place booking', 'error');
@@ -435,7 +444,7 @@
           confirmBtn.textContent = 'Confirm & Book Appointment';
         }
       } catch (e) {
-        showToast('Error booking appointment', 'error');
+        showToast(e.message || 'Error booking appointment', 'error');
         confirmBtn.disabled = false;
         confirmBtn.textContent = 'Confirm & Book Appointment';
       }

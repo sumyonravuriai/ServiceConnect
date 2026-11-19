@@ -37,4 +37,10 @@ public class ProviderController {
         Map<String, Object> profile = providerService.getProviderDetails(id);
         return ResponseEntity.ok(ApiResponse.ok(profile));
     }
+
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getProviderByUserId(@PathVariable Long userId) {
+        Map<String, Object> profile = providerService.getProviderDetailsByUserId(userId);
+        return ResponseEntity.ok(ApiResponse.ok(profile));
+    }
 }

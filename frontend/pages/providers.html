@@ -222,13 +222,16 @@
       if (!res || !res.data || res.data.length === 0) {
         countHeading.textContent = `0 Specialists Found`;
         container.innerHTML = `
-          <div class="card" style="grid-column: 1/-1; text-align: center; padding: 4rem 1.5rem; border: 2px dashed var(--color-border);">
-            <div style="font-size: 2.5rem; color: var(--color-text-light); margin-bottom: 1rem;">🔍</div>
-            <h3 style="font-size: var(--font-size-lg); font-weight: 700; color: var(--color-primary); margin-bottom: 0.5rem;">No matching service specialists found</h3>
-            <p style="font-size: var(--font-size-sm); color: var(--color-text-muted); max-width: 420px; margin: 0 auto 1.5rem auto;">
-              Try clearing filters or searching across another city or neighborhood.
+          <div class="card" style="grid-column: 1/-1; text-align: center; padding: 4.5rem 1.5rem; border: 2px dashed var(--color-border); border-radius: var(--radius-lg); background: var(--color-surface);">
+            <div style="font-size: 3rem; color: var(--color-text-muted); margin-bottom: 1rem;">📍</div>
+            <h3 style="font-size: var(--font-size-xl); font-weight: 800; color: var(--color-primary); margin-bottom: 0.5rem;">No service providers available in your area yet</h3>
+            <p style="font-size: var(--font-size-sm); color: var(--color-text-muted); max-width: 460px; margin: 0 auto 1.75rem auto; line-height: 1.6;">
+              Please try another location, select a different service category, or check back soon as verified local professionals join our network.
             </p>
-            <button class="btn btn-outline" onclick="resetFilters()">Reset All Filters</button>
+            <div style="display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">
+              <button class="btn btn-outline" onclick="resetFilters()">Reset All Filters</button>
+              <a href="register.html?role=PROVIDER" class="btn btn-primary">Join as a Service Provider</a>
+            </div>
           </div>
         `;
         return;

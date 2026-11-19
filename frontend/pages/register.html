@@ -28,7 +28,7 @@
   </header>
 
   <main style="flex: 1; display: flex; align-items: center; justify-content: center; padding: 3rem 1rem;">
-    <div class="card" style="width: 100%; max-width: 620px; padding: 2.75rem; box-shadow: var(--shadow-xl); border-radius: var(--radius-xl);">
+    <div class="card" style="width: 100%; max-width: 640px; padding: 2.75rem; box-shadow: var(--shadow-xl); border-radius: var(--radius-xl);">
       <div style="text-align: center; margin-bottom: 2rem;">
         <span class="section-tag" style="margin-bottom: 0.5rem;">Join Our Network</span>
         <h1 style="font-size: var(--font-size-2xl); font-weight: 800; color: var(--color-primary); margin-top: 0.25rem;">Create Your Account</h1>
@@ -41,38 +41,57 @@
         <button type="button" id="tabProvider" class="btn btn-outline" onclick="setRegisterRole('PROVIDER')">🔧 I am a Service Provider</button>
       </div>
 
+      <!-- Alert Box -->
+      <div id="registerAlert" style="display: none; padding: 0.85rem 1rem; border-radius: var(--radius-md); font-size: var(--font-size-xs); font-weight: 600; margin-bottom: 1.5rem; line-height: 1.45;"></div>
+
       <!-- Registration Form -->
-      <form id="registerForm">
+      <form id="registerForm" novalidate>
         <input type="hidden" id="regRole" value="CUSTOMER">
 
         <!-- Common Fields -->
         <div class="form-row">
           <div class="form-group">
-            <label class="form-label" for="regFullName">Full Name</label>
-            <input type="text" id="regFullName" class="form-control" placeholder="John Doe" required>
+            <label class="form-label" for="regFullName">Full Name *</label>
+            <input type="text" id="regFullName" class="form-control" placeholder="John Doe" required autocomplete="name">
           </div>
           <div class="form-group">
-            <label class="form-label" for="regPhone">Phone Number</label>
-            <input type="tel" id="regPhone" class="form-control" placeholder="+91 98765 00000" required>
+            <label class="form-label" for="regPhone">Mobile Phone (10 digits) *</label>
+            <input type="tel" id="regPhone" class="form-control" placeholder="9876543210" required pattern="[0-9]{10}" autocomplete="tel">
           </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="regEmail">Email Address *</label>
+          <input type="email" id="regEmail" class="form-control" placeholder="your.name@example.com" required autocomplete="email">
+          <span class="form-hint">A verification code will be dispatched to this address</span>
         </div>
 
         <div class="form-row">
           <div class="form-group">
-            <label class="form-label" for="regEmail">Email Address</label>
-            <input type="email" id="regEmail" class="form-control" placeholder="name@example.com" required>
+            <label class="form-label" for="regPassword">Password *</label>
+            <input type="password" id="regPassword" class="form-control" placeholder="Min 8 characters" minlength="8" required autocomplete="new-password">
           </div>
           <div class="form-group">
-            <label class="form-label" for="regPassword">Password</label>
-            <input type="password" id="regPassword" class="form-control" placeholder="Minimum 6 characters" minlength="6" required>
+            <label class="form-label" for="regConfirmPassword">Confirm Password *</label>
+            <input type="password" id="regConfirmPassword" class="form-control" placeholder="Repeat password" minlength="8" required autocomplete="new-password">
           </div>
         </div>
 
         <!-- Customer Specific Fields -->
         <div id="customerExtraFields">
           <div class="form-group">
-            <label class="form-label" for="regAddress">Doorstep Address</label>
-            <input type="text" id="regAddress" class="form-control" placeholder="House/Flat number, locality, city">
+            <label class="form-label" for="regAddress">Doorstep Address (Optional)</label>
+            <input type="text" id="regAddress" class="form-control" placeholder="House/Flat number, building, street">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="regCity">City / Town</label>
+              <input type="text" id="regCity" class="form-control" placeholder="e.g. Downtown">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="regPostalCode">Postal PIN Code</label>
+              <input type="text" id="regPostalCode" class="form-control" placeholder="e.g. 500001">
+            </div>
           </div>
         </div>
 
@@ -80,48 +99,59 @@
         <div id="providerExtraFields" style="display: none;">
           <div class="form-row">
             <div class="form-group">
-              <label class="form-label" for="regBusinessName">Business / Trade Name</label>
+              <label class="form-label" for="regBusinessName">Business / Trade Name *</label>
               <input type="text" id="regBusinessName" class="form-control" placeholder="e.g. Apex Electrical Repairs">
             </div>
             <div class="form-group">
-              <label class="form-label" for="regCategory">Primary Trade Category</label>
+              <label class="form-label" for="regCategory">Trade Category *</label>
               <select id="regCategory" class="form-control">
-                <option value="Electrician">Electrician</option>
-                <option value="Plumber">Plumber</option>
-                <option value="Mechanic">Mechanic</option>
-                <option value="Cleaner">Cleaner</option>
-                <option value="Carpenter">Carpenter</option>
-                <option value="AC Repair">AC Repair</option>
-                <option value="Painter">Painter</option>
-                <option value="Cooking Services">Cooking Services</option>
-                <option value="Tutoring">Tutoring</option>
+                <option value="1">Electrician</option>
+                <option value="2">Plumber</option>
+                <option value="3">Mechanic</option>
+                <option value="4">Cleaner</option>
+                <option value="5">Carpenter</option>
+                <option value="6">AC Repair</option>
+                <option value="7">Painter</option>
+                <option value="8">Cooking Services</option>
+                <option value="9">Tutoring</option>
+                <option value="10">Pest Control</option>
               </select>
             </div>
           </div>
 
           <div class="form-row">
             <div class="form-group">
-              <label class="form-label" for="regExperience">Years of Experience</label>
-              <input type="number" id="regExperience" class="form-control" placeholder="e.g. 5" min="1" max="50">
+              <label class="form-label" for="regExperience">Years of Professional Experience *</label>
+              <input type="number" id="regExperience" class="form-control" placeholder="e.g. 5" min="1" max="50" value="3">
             </div>
             <div class="form-group">
-              <label class="form-label" for="regStartingPrice">Base Starting Fee (₹)</label>
-              <input type="number" id="regStartingPrice" class="form-control" placeholder="e.g. 350" min="50">
+              <label class="form-label" for="regStartingPrice">Starting Fee (₹) *</label>
+              <input type="number" id="regStartingPrice" class="form-control" placeholder="e.g. 350" min="50" value="350">
             </div>
           </div>
 
           <div class="form-group">
-            <label class="form-label" for="regServiceAreas">Service Coverage Cities / Neighborhoods</label>
-            <input type="text" id="regServiceAreas" class="form-control" placeholder="e.g. Downtown, Westside, North Suburbs">
+            <label class="form-label" for="regServiceAreas">Service Coverage Cities / Localities *</label>
+            <input type="text" id="regServiceAreas" class="form-control" placeholder="e.g. Downtown, Westside, North End">
+            <span class="form-hint">Publicly displayed area (your private residential address is never shared)</span>
           </div>
 
           <div class="form-group">
-            <label class="form-label" for="regBio">Short Professional Bio</label>
-            <textarea id="regBio" class="form-control" rows="2" placeholder="Describe your experience, certifications and services offered..."></textarea>
+            <label class="form-label" for="regBio">Professional Background / Bio</label>
+            <textarea id="regBio" class="form-control" rows="2" placeholder="Briefly describe your certifications, specialty tools, and trade experience..."></textarea>
           </div>
         </div>
 
-        <button type="submit" id="regSubmitBtn" class="btn btn-primary btn-block btn-lg" style="margin-top: 1rem;">Create Account</button>
+        <div class="form-group" style="margin-top: 1rem;">
+          <label style="display: flex; align-items: flex-start; gap: 0.5rem; font-size: var(--font-size-xs); color: var(--color-text-muted); cursor: pointer;">
+            <input type="checkbox" id="regConsent" required style="margin-top: 2px;">
+            <span>I agree to the <a href="terms.html" target="_blank" style="color: var(--color-accent); text-decoration: underline;">Terms of Service</a> and <a href="privacy.html" target="_blank" style="color: var(--color-accent); text-decoration: underline;">Privacy Policy</a>.</span>
+          </label>
+        </div>
+
+        <button type="submit" id="regSubmitBtn" class="btn btn-primary btn-block btn-lg" style="margin-top: 1.25rem;">
+          Create Account & Verify
+        </button>
       </form>
 
       <div style="text-align: center; margin-top: 1.5rem; font-size: var(--font-size-sm); color: var(--color-text-muted);">
@@ -129,6 +159,12 @@
       </div>
     </div>
   </main>
+
+  <footer style="text-align: center; padding: 1.5rem; font-size: var(--font-size-xs); color: var(--color-text-muted);">
+    <a href="privacy.html" style="color: var(--color-text-muted); text-decoration: underline;">Privacy Policy</a> &bull;
+    <a href="terms.html" style="color: var(--color-text-muted); text-decoration: underline;">Terms & Conditions</a> &bull;
+    &copy; ServiceConnect Technologies Ltd.
+  </footer>
 
   <script src="../js/api.js"></script>
   <script src="../js/auth.js"></script>
@@ -159,41 +195,107 @@
       setRegisterRole('PROVIDER');
     }
 
+    const alertBox = document.getElementById('registerAlert');
+    const submitBtn = document.getElementById('regSubmitBtn');
+
+    function showAlert(msg, isError = true) {
+      alertBox.style.display = 'block';
+      alertBox.style.backgroundColor = isError ? '#fee2e2' : '#dcfce7';
+      alertBox.style.color = isError ? '#991b1b' : '#166534';
+      alertBox.style.border = `1px solid ${isError ? '#fca5a5' : '#86efac'}`;
+      alertBox.textContent = msg;
+    }
+
     document.getElementById('registerForm').addEventListener('submit', async (e) => {
       e.preventDefault();
+      alertBox.style.display = 'none';
+
       const role = document.getElementById('regRole').value;
       const fullName = document.getElementById('regFullName').value.trim();
       const phone = document.getElementById('regPhone').value.trim();
-      const email = document.getElementById('regEmail').value.trim();
+      const email = document.getElementById('regEmail').value.trim().toLowerCase();
       const password = document.getElementById('regPassword').value;
+      const confirmPassword = document.getElementById('regConfirmPassword').value;
+      const consent = document.getElementById('regConsent').checked;
 
-      const newUser = {
-        id: Date.now(),
-        fullName,
-        phone,
-        email,
-        role
-      };
-
-      if (role === 'PROVIDER') {
-        newUser.businessName = document.getElementById('regBusinessName').value.trim() || fullName;
-        newUser.category = document.getElementById('regCategory').value;
-        newUser.experience = `${document.getElementById('regExperience').value || 3} years`;
-        newUser.startingPrice = Number(document.getElementById('regStartingPrice').value) || 350;
-        newUser.serviceArea = document.getElementById('regServiceAreas').value || 'Downtown';
-        newUser.bio = document.getElementById('regBio').value || 'Verified skilled service professional.';
+      if (!fullName || !phone || !email || !password) {
+        showAlert('Please complete all required fields.');
+        return;
       }
 
-      Auth.setUser(newUser);
-      showToast('Registration successful! Welcome to ServiceConnect', 'success');
+      if (password !== confirmPassword) {
+        showAlert('Passwords do not match. Please re-enter.');
+        return;
+      }
 
-      setTimeout(() => {
+      if (password.length < 8) {
+        showAlert('Password must contain at least 8 characters.');
+        return;
+      }
+
+      if (!consent) {
+        showAlert('You must agree to the Terms of Service and Privacy Policy to register.');
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Registering Account...';
+
+      try {
+        let endpoint = '/auth/register/customer';
+        let payload = {
+          fullName,
+          phone,
+          email,
+          password,
+          address: document.getElementById('regAddress').value.trim(),
+          city: document.getElementById('regCity').value.trim(),
+          postalCode: document.getElementById('regPostalCode').value.trim()
+        };
+
         if (role === 'PROVIDER') {
-          window.location.href = 'provider-dashboard.html';
-        } else {
-          window.location.href = 'customer-dashboard.html';
+          endpoint = '/auth/register/provider';
+          const businessName = document.getElementById('regBusinessName').value.trim() || fullName;
+          const categoryId = Number(document.getElementById('regCategory').value);
+          const experienceYears = Number(document.getElementById('regExperience').value) || 1;
+          const startingPrice = Number(document.getElementById('regStartingPrice').value) || 350;
+          const serviceArea = document.getElementById('regServiceAreas').value.trim() || 'Local Area';
+          const bio = document.getElementById('regBio').value.trim() || 'Verified professional service provider.';
+
+          payload = {
+            fullName,
+            phone,
+            email,
+            password,
+            businessName,
+            categoryId,
+            experienceYears,
+            startingPrice,
+            serviceArea,
+            bio
+          };
         }
-      }, 700);
+
+        const res = await Api.request(endpoint, {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        });
+
+        if (res && res.success) {
+          showAlert('Registration successful! Redirecting to email verification...', false);
+          showToast('Account created! Please verify your email.', 'success');
+          setTimeout(() => {
+            window.location.href = `verify-email.html?email=${encodeURIComponent(email)}`;
+          }, 1200);
+        } else {
+          showAlert(res && res.message ? res.message : 'Registration failed. Please check your information.', true);
+        }
+      } catch (err) {
+        showAlert(err.message || 'Unable to complete registration. Please try again.', true);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Create Account & Verify';
+      }
     });
   </script>
 </body>

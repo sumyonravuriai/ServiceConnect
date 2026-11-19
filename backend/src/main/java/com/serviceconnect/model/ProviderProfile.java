@@ -17,6 +17,8 @@ public class ProviderProfile {
     private String profileImage;
     private boolean isVerified;
     private boolean isAvailable;
+    private String approvalStatus; // PENDING_APPROVAL, APPROVED, REJECTED, SUSPENDED
+    private String rejectionReason;
     private BigDecimal ratingAvg;
     private Integer ratingCount;
     private BigDecimal startingPrice;
@@ -63,6 +65,12 @@ public class ProviderProfile {
 
     public boolean isAvailable() { return isAvailable; }
     public void setAvailable(boolean available) { isAvailable = available; }
+
+    public String getApprovalStatus() { return approvalStatus; }
+    public void setApprovalStatus(String approvalStatus) { this.approvalStatus = approvalStatus; }
+
+    public String getRejectionReason() { return rejectionReason; }
+    public void setRejectionReason(String rejectionReason) { this.rejectionReason = rejectionReason; }
 
     public BigDecimal getRatingAvg() { return ratingAvg; }
     public void setRatingAvg(BigDecimal ratingAvg) { this.ratingAvg = ratingAvg; }

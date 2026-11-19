@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Email Verification – ServiceConnect</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body style="background-color: var(--color-surface-alt); min-height: 100vh; display: flex; flex-direction: column;">
+
+  <header class="navbar">
+    <div class="container nav-container">
+      <a href="../index.html" class="brand-logo">
+        <div class="brand-icon">
+          <svg viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+          </svg>
+        </div>
+        <div class="brand-text">Service<span>Connect</span></div>
+      </a>
+      <a href="login.html" class="btn btn-text btn-sm">Back to Sign In</a>
+    </div>
+  </header>
+
+  <main style="flex: 1; display: flex; align-items: center; justify-content: center; padding: 3rem 1rem;">
+    <div class="card" style="width: 100%; max-width: 460px; padding: 2.75rem; box-shadow: var(--shadow-xl); border-radius: var(--radius-xl); text-align: center;">
+      <div style="font-size: 2.75rem; margin-bottom: 0.75rem;">✉️</div>
+      <h1 style="font-size: var(--font-size-2xl); font-weight: 800; color: var(--color-primary); margin-bottom: 0.5rem;">Verify Your Email</h1>
+      <p style="font-size: var(--font-size-sm); color: var(--color-text-muted); line-height: 1.5; margin-bottom: 1.75rem;">
+        We've dispatched a 6-digit confirmation code and verification link to your registered email address.
+      </p>
+
+      <div id="verifyAlert" style="display: none; padding: 0.85rem 1rem; border-radius: var(--radius-md); font-size: var(--font-size-xs); font-weight: 600; margin-bottom: 1.5rem; text-align: left;"></div>
+
+      <form id="verifyForm">
+        <div class="form-group" style="text-align: left;">
+          <label class="form-label" for="verifyEmail">Registered Email</label>
+          <input type="email" id="verifyEmail" class="form-control" placeholder="your.name@example.com" required>
+        </div>
+
+        <div class="form-group" style="text-align: left;">
+          <label class="form-label" for="verifyOtp">6-Digit Code or Verification Token</label>
+          <input type="text" id="verifyOtp" class="form-control" placeholder="e.g. 849201" style="font-size: 1.35rem; letter-spacing: 4px; text-align: center; font-weight: 700;" required>
+          <span class="form-hint" style="text-align: center; display: block;">Enter the 6-digit code received in your email</span>
+        </div>
+
+        <button type="submit" id="verifySubmitBtn" class="btn btn-primary btn-block btn-lg" style="margin-top: 1.25rem;">
+          Verify & Activate Account
+        </button>
+      </form>
+
+      <div style="margin-top: 1.75rem; font-size: var(--font-size-xs); color: var(--color-text-muted);">
+        Didn't receive the email? Check your spam/junk folder or <a href="login.html" style="color: var(--color-accent); font-weight: 700;">return to login</a>.
+      </div>
+    </div>
+  </main>
+
+  <script src="../js/api.js"></script>
+  <script src="../js/auth.js"></script>
+  <script src="../js/main.js"></script>
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const emailParam = urlParams.get('email');
+    const tokenParam = urlParams.get('token');
+
+    if (emailParam) {
+      document.getElementById('verifyEmail').value = emailParam;
+    }
+    if (tokenParam) {
+      document.getElementById('verifyOtp').value = tokenParam;
+      // Auto-trigger if token is in URL from email click
+      window.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('verifyForm').dispatchEvent(new Event('submit'));
+      });
+    }
+
+    const verifyForm = document.getElementById('verifyForm');
+    const alertBox = document.getElementById('verifyAlert');
+    const submitBtn = document.getElementById('verifySubmitBtn');
+
+    function showAlert(message, isError = true) {
+      alertBox.style.display = 'block';
+      alertBox.style.backgroundColor = isError ? '#fee2e2' : '#dcfce7';
+      alertBox.style.color = isError ? '#991b1b' : '#166534';
+      alertBox.style.border = `1px solid ${isError ? '#fca5a5' : '#86efac'}`;
+      alertBox.textContent = message;
+    }
+
+    verifyForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      alertBox.style.display = 'none';
+
+      const email = document.getElementById('verifyEmail').value.trim();
+      const token = document.getElementById('verifyOtp').value.trim();
+
+      if (!token) {
+        showAlert('Please enter the verification code or token.');
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Verifying...';
+
+      try {
+        const res = await Api.request('/auth/verify-email', {
+          method: 'POST',
+          body: JSON.stringify({ email, token })
+        });
+
+        if (res && res.success) {
+          showAlert('✓ Email successfully verified! Redirecting to sign in...', false);
+          showToast('Account verified! Please sign in.', 'success');
+          setTimeout(() => {
+            window.location.href = 'login.html';
+          }, 1500);
+        } else {
+          showAlert(res && res.message ? res.message : 'Invalid or expired verification code.', true);
+        }
+      } catch (err) {
+        showAlert(err.message || 'Unable to complete verification. Please check the code.', true);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Verify & Activate Account';
+      }
+    });
+  </script>
+</body>
+</html>

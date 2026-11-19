@@ -28,104 +28,121 @@
   </header>
 
   <main style="flex: 1; display: flex; align-items: center; justify-content: center; padding: 3rem 1rem;">
-    <div class="card" style="width: 100%; max-width: 450px; padding: 2.75rem; box-shadow: var(--shadow-xl); border-radius: var(--radius-xl);">
+    <div class="card" style="width: 100%; max-width: 440px; padding: 2.5rem; box-shadow: var(--shadow-xl); border-radius: var(--radius-xl);">
       <div style="text-align: center; margin-bottom: 2rem;">
-        <span class="section-tag" style="margin-bottom: 0.5rem;">Secure Access</span>
-        <h1 style="font-size: var(--font-size-2xl); font-weight: 800; color: var(--color-primary); margin-top: 0.25rem;">Welcome to ServiceConnect</h1>
-        <p style="font-size: var(--font-size-sm); color: var(--color-text-muted);">Sign in to manage appointments, quotes and services.</p>
+        <span class="section-tag" style="margin-bottom: 0.5rem;">Secure Portal</span>
+        <h1 style="font-size: var(--font-size-2xl); font-weight: 800; color: var(--color-primary); margin-top: 0.25rem;">Sign In to ServiceConnect</h1>
+        <p style="font-size: var(--font-size-sm); color: var(--color-text-muted);">Access your appointments, service orders, and account dashboard.</p>
       </div>
 
-      <form id="loginForm">
+      <!-- Alert Box for Server Messages -->
+      <div id="loginAlert" style="display: none; padding: 0.85rem 1rem; border-radius: var(--radius-md); font-size: var(--font-size-xs); font-weight: 600; margin-bottom: 1.5rem; line-height: 1.45;"></div>
+
+      <form id="loginForm" novalidate>
         <div class="form-group">
           <label class="form-label" for="loginEmail">Email Address</label>
-          <input type="email" id="loginEmail" class="form-control" placeholder="name@example.com" required value="anita@example.com">
+          <input type="email" id="loginEmail" class="form-control" placeholder="your.name@example.com" required autocomplete="email">
         </div>
 
         <div class="form-group">
           <div style="display: flex; justify-content: space-between; align-items: baseline;">
             <label class="form-label" for="loginPassword">Password</label>
-            <a href="#" style="font-size: var(--font-size-xs); color: var(--color-accent); font-weight: 600;" onclick="showToast('Demo password is password123', 'info')">Forgot password?</a>
+            <a href="forgot-password.html" style="font-size: var(--font-size-xs); color: var(--color-accent); font-weight: 600;">Forgot Password?</a>
           </div>
-          <input type="password" id="loginPassword" class="form-control" placeholder="••••••••" required value="password123">
+          <input type="password" id="loginPassword" class="form-control" placeholder="••••••••" required autocomplete="current-password">
         </div>
 
-        <div class="form-group">
-          <label class="form-label" for="loginRole">Account Role</label>
-          <select id="loginRole" class="form-control">
-            <option value="CUSTOMER">Customer Account</option>
-            <option value="PROVIDER">Service Provider Account</option>
-            <option value="ADMIN">System Administrator</option>
-          </select>
-        </div>
-
-        <button type="submit" id="loginSubmitBtn" class="btn btn-primary btn-block btn-lg" style="margin-top: 0.5rem;">Sign In</button>
+        <button type="submit" id="loginSubmitBtn" class="btn btn-primary btn-block btn-lg" style="margin-top: 1rem;">
+          Sign In
+        </button>
       </form>
 
-      <!-- Quick Demo Login Presets -->
-      <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px dashed var(--color-border); text-align: center;">
-        <span style="font-size: var(--font-size-xs); color: var(--color-text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">One-Click Quick Logins</span>
-        <div style="display: flex; gap: 0.5rem; margin-top: 0.75rem; justify-content: center; flex-wrap: wrap;">
-          <button type="button" class="btn btn-outline btn-sm" onclick="quickLogin('CUSTOMER')">👤 Customer</button>
-          <button type="button" class="btn btn-outline btn-sm" onclick="quickLogin('PROVIDER')">🔧 Provider</button>
-          <button type="button" class="btn btn-outline btn-sm" onclick="quickLogin('ADMIN')">🛡️ Admin</button>
-        </div>
-      </div>
-
-      <div style="text-align: center; margin-top: 1.5rem; font-size: var(--font-size-sm); color: var(--color-text-muted);">
-        Don't have an account? <a href="register.html" style="color: var(--color-accent); font-weight: 700;">Register now</a>
+      <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--color-border); text-align: center; font-size: var(--font-size-sm); color: var(--color-text-muted);">
+        <div>Need a customer account? <a href="register.html?role=CUSTOMER" style="color: var(--color-accent); font-weight: 700;">Register as Customer</a></div>
+        <div style="margin-top: 0.5rem;">Are you a professional? <a href="register.html?role=PROVIDER" style="color: var(--color-primary); font-weight: 700;">Join as Service Provider</a></div>
       </div>
     </div>
   </main>
+
+  <footer style="text-align: center; padding: 1.5rem; font-size: var(--font-size-xs); color: var(--color-text-muted);">
+    <a href="privacy.html" style="color: var(--color-text-muted); text-decoration: underline;">Privacy Policy</a> &bull;
+    <a href="terms.html" style="color: var(--color-text-muted); text-decoration: underline;">Terms & Conditions</a> &bull;
+    &copy; ServiceConnect Technologies Ltd.
+  </footer>
 
   <script src="../js/api.js"></script>
   <script src="../js/auth.js"></script>
   <script src="../js/main.js"></script>
   <script>
-    function quickLogin(role) {
-      if (role === 'CUSTOMER') {
-        document.getElementById('loginEmail').value = 'anita@example.com';
-        document.getElementById('loginRole').value = 'CUSTOMER';
-      } else if (role === 'PROVIDER') {
-        document.getElementById('loginEmail').value = 'rajesh@example.com';
-        document.getElementById('loginRole').value = 'PROVIDER';
-      } else if (role === 'ADMIN') {
-        document.getElementById('loginEmail').value = 'admin@serviceconnect.com';
-        document.getElementById('loginRole').value = 'ADMIN';
+    const loginForm = document.getElementById('loginForm');
+    const submitBtn = document.getElementById('loginSubmitBtn');
+    const alertBox = document.getElementById('loginAlert');
+
+    function showAlert(message, isError = true, linkUrl = null, linkText = null) {
+      alertBox.style.display = 'block';
+      alertBox.style.backgroundColor = isError ? '#fee2e2' : '#dcfce7';
+      alertBox.style.color = isError ? '#991b1b' : '#166534';
+      alertBox.style.border = `1px solid ${isError ? '#fca5a5' : '#86efac'}`;
+      
+      let html = message;
+      if (linkUrl && linkText) {
+        html += `<br><a href="${linkUrl}" style="text-decoration: underline; font-weight: 700; color: inherit; margin-top: 0.35rem; display: inline-block;">${linkText}</a>`;
       }
-      document.getElementById('loginPassword').value = 'password123';
-      document.getElementById('loginForm').dispatchEvent(new Event('submit'));
+      alertBox.innerHTML = html;
     }
 
-    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
+      alertBox.style.display = 'none';
+
       const email = document.getElementById('loginEmail').value.trim();
       const password = document.getElementById('loginPassword').value;
-      const role = document.getElementById('loginRole').value;
 
-      const submitBtn = document.getElementById('loginSubmitBtn');
+      if (!email || !password) {
+        showAlert('Please enter both your registered email address and password.');
+        return;
+      }
+
       submitBtn.disabled = true;
       submitBtn.textContent = 'Authenticating...';
 
       try {
-        let user;
-        if (role === 'ADMIN') {
-          user = { id: 99, email: email, fullName: 'System Administrator', role: 'ADMIN' };
-        } else if (role === 'PROVIDER') {
-          user = { id: 1, email: email, fullName: 'Rajesh Sharma', role: 'PROVIDER' };
+        const res = await Api.request('/auth/login', {
+          method: 'POST',
+          body: JSON.stringify({ email, password })
+        });
+
+        if (res && res.success && res.data) {
+          const authData = res.data;
+          Auth.setUser(authData.user, authData.token);
+          showToast('Welcome back, ' + authData.user.fullName + '!', 'success');
+
+          // Direct to appropriate role dashboard
+          setTimeout(() => {
+            if (authData.user.role === 'ADMIN') {
+              window.location.href = 'admin-dashboard.html';
+            } else if (authData.user.role === 'PROVIDER') {
+              window.location.href = 'provider-dashboard.html';
+            } else {
+              window.location.href = 'customer-dashboard.html';
+            }
+          }, 600);
         } else {
-          user = { id: 1, email: email, fullName: 'Anita Desai', role: 'CUSTOMER', phone: '+91 98765 43210' };
+          const msg = res && res.message ? res.message : 'Invalid email or password.';
+          if (msg.includes('verify')) {
+            showAlert(msg, true, `verify-email.html?email=${encodeURIComponent(email)}`, 'Click here to Enter Verification Code');
+          } else {
+            showAlert(msg, true);
+          }
         }
-
-        Auth.setUser(user);
-        showToast('Login successful! Redirecting...', 'success');
-
-        setTimeout(() => {
-          if (role === 'ADMIN') window.location.href = 'admin-dashboard.html';
-          else if (role === 'PROVIDER') window.location.href = 'provider-dashboard.html';
-          else window.location.href = 'customer-dashboard.html';
-        }, 600);
       } catch (err) {
-        showToast('Invalid email or password', 'error');
+        const errorMsg = err.message || 'Unable to connect to authentication server. Please try again.';
+        if (errorMsg.includes('verify')) {
+          showAlert(errorMsg, true, `verify-email.html?email=${encodeURIComponent(email)}`, 'Click here to Enter Verification Code');
+        } else {
+          showAlert(errorMsg, true);
+        }
+      } finally {
         submitBtn.disabled = false;
         submitBtn.textContent = 'Sign In';
       }

@@ -18,11 +18,13 @@ CREATE TABLE users (
     full_name VARCHAR(100) NOT NULL,
     phone VARCHAR(20) NOT NULL,
     role ENUM('CUSTOMER', 'PROVIDER', 'ADMIN') NOT NULL DEFAULT 'CUSTOMER',
-    status ENUM('ACTIVE', 'PENDING', 'SUSPENDED') NOT NULL DEFAULT 'ACTIVE',
+    status ENUM('ACTIVE', 'PENDING_VERIFICATION', 'SUSPENDED') NOT NULL DEFAULT 'PENDING_VERIFICATION',
+    email_verified BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_user_role (role),
-    INDEX idx_user_status (status)
+    INDEX idx_user_status (status),
+    INDEX idx_user_email_verif (email, email_verified)
 ) ENGINE=InnoDB;
 
 -- -----------------------------------------------------------------------------
@@ -73,6 +75,8 @@ CREATE TABLE provider_profiles (
     profile_image VARCHAR(500),
     is_verified BOOLEAN DEFAULT FALSE,
     is_available BOOLEAN DEFAULT TRUE,
+    approval_status ENUM('PENDING_APPROVAL', 'APPROVED', 'REJECTED', 'SUSPENDED') NOT NULL DEFAULT 'PENDING_APPROVAL',
+    rejection_reason VARCHAR(255),
     rating_avg DECIMAL(3, 2) DEFAULT 0.00,
     rating_count INT DEFAULT 0,
     starting_price DECIMAL(10, 2) NOT NULL DEFAULT 299.00,
@@ -81,6 +85,7 @@ CREATE TABLE provider_profiles (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (category_id) REFERENCES service_categories(id) ON DELETE RESTRICT,
     INDEX idx_provider_cat (category_id, is_verified),
+    INDEX idx_provider_approval (approval_status, is_available),
     INDEX idx_provider_rating (rating_avg),
     INDEX idx_provider_price (starting_price)
 ) ENGINE=InnoDB;
@@ -206,4 +211,49 @@ CREATE TABLE chat_messages (
     FOREIGN KEY (booking_id) REFERENCES bookings(id) ON DELETE CASCADE,
     FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
     INDEX idx_chat_booking (booking_id, created_at)
+) ENGINE=InnoDB;
+
+
+-- -----------------------------------------------------------------------------
+-- 12. EMAIL VERIFICATIONS TABLE (Public Security)
+-- -----------------------------------------------------------------------------
+CREATE TABLE email_verifications (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    token VARCHAR(100) NOT NULL UNIQUE,
+    otp_code VARCHAR(10) NOT NULL,
+    expires_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_verif_token (token),
+    INDEX idx_verif_user (user_id)
+) ENGINE=InnoDB;
+
+-- -----------------------------------------------------------------------------
+-- 13. PASSWORD RESETS TABLE (Public Security)
+-- -----------------------------------------------------------------------------
+CREATE TABLE password_resets (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    token VARCHAR(100) NOT NULL UNIQUE,
+    expires_at TIMESTAMP NOT NULL,
+    is_used BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_pwd_token (token)
+) ENGINE=InnoDB;
+
+-- -----------------------------------------------------------------------------
+-- 14. AUDIT LOGS TABLE (Administrative Accountability)
+-- -----------------------------------------------------------------------------
+CREATE TABLE audit_logs (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    admin_id BIGINT NOT NULL,
+    action VARCHAR(100) NOT NULL,
+    target_type VARCHAR(50) NOT NULL,
+    target_id BIGINT NOT NULL,
+    details TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (admin_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_audit_action (action, created_at)
 ) ENGINE=InnoDB;

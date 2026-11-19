@@ -30,6 +30,9 @@ public class UserDao {
         u.setPhone(rs.getString("phone"));
         u.setRole(rs.getString("role"));
         u.setStatus(rs.getString("status"));
+        try {
+            u.setEmailVerified(rs.getBoolean("email_verified"));
+        } catch (Exception ignored) {}
         u.setCreatedAt(rs.getTimestamp("created_at") != null ? rs.getTimestamp("created_at").toLocalDateTime() : null);
         u.setUpdatedAt(rs.getTimestamp("updated_at") != null ? rs.getTimestamp("updated_at").toLocalDateTime() : null);
         return u;
@@ -48,7 +51,7 @@ public class UserDao {
     }
 
     public Long create(User user) {
-        String sql = "INSERT INTO users (email, password_hash, full_name, phone, role, status) VALUES (?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO users (email, password_hash, full_name, phone, role, status, email_verified) VALUES (?, ?, ?, ?, ?, ?, ?)";
         KeyHolder keyHolder = new GeneratedKeyHolder();
 
         jdbcTemplate.update(connection -> {
@@ -58,12 +61,23 @@ public class UserDao {
             ps.setString(3, user.getFullName());
             ps.setString(4, user.getPhone());
             ps.setString(5, user.getRole());
-            ps.setString(6, user.getStatus() != null ? user.getStatus() : "ACTIVE");
+            ps.setString(6, user.getStatus() != null ? user.getStatus() : "PENDING_VERIFICATION");
+            ps.setBoolean(7, user.isEmailVerified());
             return ps;
         }, keyHolder);
 
         Number key = keyHolder.getKey();
         return key != null ? key.longValue() : null;
+    }
+
+    public int verifyEmail(Long userId) {
+        String sql = "UPDATE users SET email_verified = TRUE, status = 'ACTIVE' WHERE id = ?";
+        return jdbcTemplate.update(sql, userId);
+    }
+
+    public int updatePassword(Long userId, String passwordHash) {
+        String sql = "UPDATE users SET password_hash = ? WHERE id = ?";
+        return jdbcTemplate.update(sql, passwordHash, userId);
     }
 
     public int updateStatus(Long id, String status) {

@@ -18,9 +18,9 @@ USE serviceconnect_db;
 -- Default login: admin@serviceconnect.com / password123 (Change upon first production login)
 -- BCrypt hash for 'password123': $2a$10$e8p2c6/7qZ8k1s1X0e5cuA4Q1q2w3e4r5t6y7u8i9o0p1a2s3d4f
 -- -----------------------------------------------------------------------------
-INSERT INTO users (id, email, password_hash, full_name, phone, role, status) VALUES
-(1, 'admin@serviceconnect.com', '$2a$10$e8p2c6/7qZ8k1s1X0e5cuA4Q1q2w3e4r5t6y7u8i9o0p1a2s3d4f', 'System Administrator', '+91 98765 99999', 'ADMIN', 'ACTIVE')
-ON DUPLICATE KEY UPDATE full_name = VALUES(full_name);
+INSERT INTO users (id, email, password_hash, full_name, phone, role, status, email_verified) VALUES
+(1, 'admin@serviceconnect.com', '$2a$10$e8p2c6/7qZ8k1s1X0e5cuA4Q1q2w3e4r5t6y7u8i9o0p1a2s3d4f', 'System Administrator', '+91 98765 99999', 'ADMIN', 'ACTIVE', TRUE)
+ON DUPLICATE KEY UPDATE full_name = VALUES(full_name), email_verified = TRUE;
 
 -- -----------------------------------------------------------------------------
 -- 2. MASTER SERVICE CATEGORIES

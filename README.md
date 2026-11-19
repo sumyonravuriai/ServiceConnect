@@ -113,56 +113,69 @@ ServiceConnect bridges the gap between local service technicians and neighborhoo
 
 ## 🗄 Relational Database Design (MySQL)
 
-The database schema is normalized and stored under [`database/schema.sql`](file:///c:/Users/SUMYON/OneDrive/Documents/sem%203/SERVICE_CONNECT/database/schema.sql):
+The database schema is fully normalized into 14 relational tables stored under [`database/schema.sql`](file:///c:/Users/SUMYON/OneDrive/Documents/sem%203/SERVICE_CONNECT/database/schema.sql):
 
-| # | Table Name | Description | Key Relationships |
+| # | Table Name | Description | Key Relationships & Constraints |
 |---|---|---|---|
-| 1 | `users` | Accounts, credentials (BCrypt), and roles | PK: `id`, Unique: `email` |
+| 1 | `users` | Accounts, credentials (BCrypt), roles (`CUSTOMER`, `PROVIDER`, `ADMIN`), and email verification state | PK: `id`, Unique: `email` |
 | 2 | `customer_addresses` | Doorstep addresses saved by customers | FK: `user_id` → `users(id)` |
-| 3 | `service_categories` | Trade master list (Electrician, Plumber, etc.) | PK: `id`, Unique: `name`, `slug` |
-| 4 | `provider_profiles` | Business details, coverage area, ratings | FK: `user_id` → `users(id)`, `category_id` → `service_categories(id)` |
-| 5 | `services` | Standard service items | FK: `category_id` → `service_categories(id)` |
-| 6 | `provider_services` | Custom rates and services configured by provider | FK: `provider_id`, `service_id` |
+| 3 | `service_categories` | Trade master list (Electrician, Plumber, AC Repair, etc.) | PK: `id`, Unique: `name`, `slug` |
+| 4 | `provider_profiles` | Business details, coverage area, ratings, approval status (`PENDING_APPROVAL`, `APPROVED`, `REJECTED`, `SUSPENDED`) | FK: `user_id` → `users(id)`, `category_id` → `service_categories(id)` |
+| 5 | `services` | Master catalog trade service items | FK: `category_id` → `service_categories(id)` |
+| 6 | `provider_services` | Custom rates and durations configured by providers | FK: `provider_id`, `service_id` |
 | 7 | `provider_availability`| Provider working days and shift hours | FK: `provider_id` |
-| 8 | `bookings` | Core transaction table with state machine | FK: `customer_id`, `provider_id`, `service_id` |
+| 8 | `bookings` | Core transaction table with state machine & unique references (`SC-XXXXX`) | FK: `customer_id`, `provider_id`, `service_id` |
 | 9 | `reviews` | Verified feedback (1 review per completed booking) | FK: `booking_id` (Unique), `customer_id`, `provider_id` |
-| 10| `favourites` | Customer bookmarked providers | FK: `customer_id`, `provider_id` |
+| 10| `favourites` | Customer bookmarked preferred service specialists | FK: `customer_id`, `provider_id` |
+| 11| `chat_messages` | Real-time direct customer-technician coordination messages | FK: `booking_id`, `sender_id` |
+| 12| `email_verifications`| Time-limited tokens and 6-digit OTP codes for account activation | FK: `user_id`, Unique: `token` |
+| 13| `password_resets` | Time-limited password recovery tokens (1 hour expiry) | FK: `user_id`, Unique: `token` |
+| 14| `audit_logs` | Administrative security and approval action audit logs | FK: `admin_id` |
 
 ### Key Constraints & Integrity Rules:
-1. **Double-Booking Prevention**: Index on `(provider_id, booking_date, time_slot)` ensures that queries quickly verify conflicting reservations.
-2. **Review Integrity**: `UNIQUE KEY (booking_id)` in the `reviews` table enforces that only one review can be written per booking.
-3. **Audit Trails**: `created_at` and `updated_at` timestamps on all transactions.
+1. **Double-Booking Prevention**: Index on `(provider_id, booking_date, time_slot)` ensures that concurrent queries prevent overlapping appointment reservations.
+2. **Review Integrity**: `UNIQUE KEY (booking_id)` in the `reviews` table strictly guarantees that only completed bookings can have exactly one review.
+3. **Approved Providers Only**: Public search queries enforce `WHERE u.status = 'ACTIVE' AND p.approval_status = 'APPROVED'`, ensuring unapproved or suspended providers never appear in search results.
+4. **Audit Accountability**: Comprehensive tracking of administrator approvals, rejections, and user account status updates.
 
 ---
 
 ## 🚀 Spring Boot REST API Documentation
 
-### Authentication (`/api/auth`)
-- `POST /api/auth/login`: Authenticate using email and password.
-- `POST /api/auth/register/customer`: Register a customer account with address.
-- `POST /api/auth/register/provider`: Register a service provider application.
+### Authentication & Account Security (`/api/auth`)
+- `POST /api/auth/register/customer`: Register real customer account and dispatches 6-digit verification OTP.
+- `POST /api/auth/register/provider`: Register service provider application (`PENDING_APPROVAL` status).
+- `POST /api/auth/verify-email`: Activate account using 6-digit OTP or token verification link.
+- `POST /api/auth/login`: Authenticate with email/password; verifies BCrypt hash, checks email activation, and issues HMAC-SHA256 JWT.
+- `POST /api/auth/forgot-password`: Generates secure password reset token and sends recovery email.
+- `POST /api/auth/reset-password`: Resets password using valid token and new BCrypt hash.
+- `POST /api/auth/logout`: Clears security context.
 
 ### Categories & Providers (`/api`)
-- `GET /api/categories`: List all active trade categories.
-- `GET /api/providers`: Search and filter providers (`?category=&city=&maxPrice=&minRating=&sortBy=`).
+- `GET /api/categories`: List active trade categories.
+- `GET /api/providers`: Search and filter approved providers (`?category=&city=&maxPrice=&minRating=&sortBy=`).
 - `GET /api/providers/{id}`: Detailed profile with custom service prices and customer reviews.
+- `GET /api/providers/user/{userId}`: Provider profile lookup for logged-in provider dashboard.
 
 ### Bookings (`/api/bookings`)
-- `POST /api/bookings`: Create a new appointment booking.
+- `POST /api/bookings`: Create a new appointment booking with double-booking validation.
 - `GET /api/bookings/{id}`: Retrieve booking by ID.
 - `GET /api/bookings/customer/{customerId}`: List bookings for customer dashboard.
 - `GET /api/bookings/provider/{providerId}`: List job queue for provider dashboard.
 - `PUT /api/bookings/{id}/status`: Update status (`ACCEPTED`, `IN_PROGRESS`, `COMPLETED`, `CANCELLED`, `REJECTED`).
 
 ### Reviews (`/api/reviews`)
-- `POST /api/reviews`: Submit review for completed booking (automatically updates provider rating average).
+- `POST /api/reviews`: Submit review for completed booking (automatically recalculates provider rating average).
 - `GET /api/reviews/provider/{providerId}`: Retrieve all reviews for a provider.
 
-### Admin (`/api/admin`)
-- `GET /api/admin/stats`: KPI dashboard stats (customers, providers, bookings, revenue).
+### Administrator Controls (`/api/admin`)
+- `GET /api/admin/stats`: KPI dashboard stats (customers, providers, bookings, pending approvals).
 - `GET /api/admin/users`: List all platform users.
-- `PUT /api/admin/users/{id}/status`: Suspend or activate user.
-- `PUT /api/admin/providers/{id}/approve`: Verify and activate provider profile.
+- `PUT /api/admin/users/{id}/status`: Suspend or reactivate user account.
+- `GET /api/admin/providers/pending`: List all provider applications awaiting review.
+- `PUT /api/admin/providers/{id}/approve`: Approve provider profile and make live in search.
+- `PUT /api/admin/providers/{id}/reject`: Reject provider application with structured reason.
+- `GET /api/admin/audit-logs`: Review platform governance actions.
 
 ---
 
@@ -178,36 +191,42 @@ SERVICE_CONNECT/
 │   │   ├── provider-profile.html    # Provider Profile, Services & Reviews
 │   │   ├── booking.html             # 5-Step Appointment Booking Wizard
 │   │   ├── customer-dashboard.html  # Customer Appointments & Reviews
-│   │   ├── provider-dashboard.html  # Provider Job Management & Schedule
-│   │   ├── admin-dashboard.html     # Administrator Analytics & Approvals
-│   │   ├── login.html               # Sign In (with Quick Demo Logins)
-│   │   └── register.html            # Registration (Customer & Provider)
+│   │   ├── provider-dashboard.html  # Provider Control Center & Approval Status
+│   │   ├── admin-dashboard.html     # Administrator Analytics & Approvals Queue
+│   │   ├── login.html               # Secure Sign In with JWT Auth
+│   │   ├── register.html            # Registration (Customer & Provider)
+│   │   ├── verify-email.html        # 6-Digit OTP & One-Click Email Activation
+│   │   ├── forgot-password.html     # Two-Phase Password Recovery
+│   │   ├── privacy.html             # DPDP Act 2023 Compliant Privacy Policy
+│   │   └── terms.html               # Platform Terms of Service
 │   ├── css/
-│   │   ├── styles.css               # Main Design System & Variables
-│   │   ├── dashboard.css            # Sidebar Layout, Tables & Cards
+│   │   ├── styles.css               # Main Design System & Color Tokens
+│   │   ├── dashboard.css            # Sidebar Layout, Tables & Badges
 │   │   └── booking.css              # Step Wizard & Slot Selector
 │   └── js/
-│       ├── api.js                   # REST API Client with Fallback Previews
-│       ├── auth.js                  # Session & Role Management
-│       └── main.js                  # Utilities, Toast Alerts & Stars
+│       ├── api.js                   # Central REST API Client
+│       ├── auth.js                  # JWT Token & Role Authorization Manager
+│       └── main.js                  # Utilities, Toast Alerts & Geolocation
 ├── backend/
-│   ├── pom.xml                      # Maven Build Configuration (Java 21)
+│   ├── pom.xml                      # Maven Build Configuration (Java 21 LTS)
 │   └── src/
 │       ├── main/java/com/serviceconnect/
 │       │   ├── ServiceConnectApplication.java
-│       │   ├── config/              # SecurityConfig, WebMvcConfig
-│       │   ├── controller/          # REST Controllers
+│       │   ├── config/              # SecurityConfig, JwtUtil, JwtAuthenticationFilter
+│       │   ├── controller/          # REST Controllers (Auth, Admin, Booking, Provider)
 │       │   ├── dao/                 # JdbcTemplate DAO Implementations
 │       │   ├── dto/                 # Request/Response DTOs
 │       │   ├── exception/           # Global Exception Handling
 │       │   ├── model/               # Domain Models / Entities
-│       │   └── service/             # Business Logic & State Machines
+│       │   └── service/             # Business Logic, EmailService & State Machines
 │       └── main/resources/
-│           └── application.properties # MySQL & Server Port Settings
+│           └── application.properties # MySQL, SMTP, JWT & Port Settings
 ├── database/
-│   ├── schema.sql                   # 10 Normalized MySQL Tables
-│   ├── sample_data.sql              # Realistic Seed Data with Passwords
+│   ├── schema.sql                   # 14 Normalized MySQL Tables
+│   ├── production_seed.sql          # Clean Master Seed (ZERO fake accounts)
+│   ├── sample_data.sql              # Development / Testing Mock Seed
 │   └── queries.sql                  # Comprehensive Evaluation Queries
+├── .env.example                     # Production Environment Configuration Template
 └── README.md
 ```
 
@@ -215,66 +234,52 @@ SERVICE_CONNECT/
 
 ## ⚙️ Installation & Setup Instructions
 
-### 🐳 Option A: 1-Click Production Run with Docker (Recommended)
-You can launch the entire stack (MySQL 8.0, Java 21 Spring Boot backend, and Nginx frontend) with one command:
-```bash
-docker-compose up --build
-```
-- **Frontend App**: `http://localhost:8000`
-- **Backend REST API**: `http://localhost:8080/api`
-- **MySQL Database**: `localhost:3306` (configured by default with clean master seed `production_seed.sql`)
-
----
-
-### 💻 Option B: Manual Local Development Setup
-
-#### 1. Database Setup (MySQL 8.0)
+### 1. Database Setup (MySQL 8.0+)
 1. Open MySQL Command Line Client or MySQL Workbench:
    ```cmd
    mysql -u root -p
    ```
-2. Execute the schema script:
+2. Initialize the schema:
    ```sql
    SOURCE database/schema.sql;
    ```
-3. Populate database according to your deployment mode:
+3. Initialize the seed data:
    - **For Real-Time Live Production (Clean start)**:
      ```sql
      SOURCE database/production_seed.sql;
      ```
-     *(Seeds ONLY master categories, standard services catalog, and system admin `admin@serviceconnect.com`. ZERO dummy users, ZERO dummy providers, ZERO fake bookings/reviews!)*
-   - **For College Demo / Testing Presentation**:
+     *(Seeds ONLY master categories, standard trade services catalog, and system admin `admin@serviceconnect.com`. Zero dummy customers, zero fake providers, zero fake bookings!)*
+   - **For Local Development Preview**:
      ```sql
      SOURCE database/sample_data.sql;
      ```
-     *(Seeds realistic pre-populated test data with customers, providers, past bookings, and verified reviews).*
 
 ### 2. Backend Setup (Java Spring Boot)
-1. Ensure Java 21 LTS is configured:
-   ```powershell
-   $env:JAVA_HOME = "C:\Program Files\Eclipse Adoptium\jdk-21.0.12.8-hotspot"
+1. Ensure Java 21 LTS is active:
+   ```cmd
+   set JAVA_HOME=C:\Program Files\Eclipse Adoptium\jdk-21.0.12.8-hotspot
    ```
-2. Adjust database credentials in `backend/src/main/resources/application.properties` (or set environment variables `DB_USERNAME` and `DB_PASSWORD`).
+2. Configure credentials in `backend/src/main/resources/application.properties` or via environment variables (`DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `MAIL_HOST`, `MAIL_USERNAME`, `MAIL_PASSWORD`).
 3. Compile and launch the Spring Boot application:
-   ```powershell
+   ```cmd
    cd backend
    mvn spring-boot:run
    ```
-   The backend API will start on **`http://localhost:8080/api`**.
+   The backend API starts on **`http://localhost:8080/api`**.
 
 ### 3. Frontend Setup
-- **Integrated mode**: Visiting **`http://localhost:8080/`** directly serves the frontend through Spring Boot's WebMvc resource mapper.
-- **Standalone mode**: You can also double click `frontend/index.html` to open it directly in Google Chrome, Microsoft Edge, or any modern browser.
+- Visit **`http://localhost:8000/`** (or open `frontend/index.html`).
 
 ---
 
-## 🧪 Sample Workflows & Testing Guide
+## 🛡️ Security & Public Launch Checklist
 
-### Pre-Configured Test Credentials
-| Role | Email | Password | Pre-populated Dashboard Features |
-|---|---|---|---|
-| **Customer** | `anita@example.com` | `password123` | Active & past bookings, address book, write review |
-| **Provider** | `rajesh@example.com` | `password123` | Incoming job requests, Accept/Reject, Services list |
-| **Admin** | `admin@serviceconnect.com` | `password123` | Platform metrics, provider approvals, user management |
-
-*Quick shortcut: Click on any of the **"One-Click Quick Logins"** buttons on [`pages/login.html`](file:///c:/Users/SUMYON/OneDrive/Documents/sem%203/SERVICE_CONNECT/frontend/pages/login.html) to instantly switch between Customer, Provider, and Admin accounts without manual typing!*
+- [x] **Password Protection**: BCrypt hashing with standard salt rounds. Plaintext passwords never stored or logged.
+- [x] **Session Security**: Stateless HMAC-SHA256 JWT tokens with automatic expiry.
+- [x] **Email Verification**: Mandatory 6-digit OTP / token verification before account activation.
+- [x] **Provider Vetting**: Multi-step onboarding workflow; only `APPROVED` providers appear in search.
+- [x] **SQL Injection Defense**: 100% parameterized Spring JDBC Prepared Statements.
+- [x] **Booking Guard**: Real-time slot conflict checking prevents double bookings.
+- [x] **Authentic Reviews**: Reviews restricted to confirmed `COMPLETED` bookings (1 per booking).
+- [x] **Legal Compliance**: Privacy Policy compliant with the Indian Digital Personal Data Protection (DPDP) Act, 2023, and comprehensive Terms of Service.
+- [x] **Zero Fake Accounts in Production**: Database contains clean master seed data for genuine user onboarding.

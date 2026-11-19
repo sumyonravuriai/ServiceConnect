@@ -1,7 +1,9 @@
 package com.serviceconnect.service;
 
+import com.serviceconnect.dao.AuditDao;
 import com.serviceconnect.dao.ProviderDao;
 import com.serviceconnect.dao.ReviewDao;
+import com.serviceconnect.dao.UserDao;
 import com.serviceconnect.exception.ResourceNotFoundException;
 import com.serviceconnect.model.ProviderCustomService;
 import com.serviceconnect.model.ProviderProfile;
@@ -18,22 +20,41 @@ public class ProviderService {
 
     private final ProviderDao providerDao;
     private final ReviewDao reviewDao;
+    private final UserDao userDao;
+    private final EmailService emailService;
+    private final AuditDao auditDao;
 
-    public ProviderService(ProviderDao providerDao, ReviewDao reviewDao) {
+    public ProviderService(ProviderDao providerDao, ReviewDao reviewDao, UserDao userDao, EmailService emailService, AuditDao auditDao) {
         this.providerDao = providerDao;
         this.reviewDao = reviewDao;
+        this.userDao = userDao;
+        this.emailService = emailService;
+        this.auditDao = auditDao;
     }
 
     public List<ProviderProfile> searchProviders(String category, String city, BigDecimal maxPrice, Double minRating, String sortBy) {
         return providerDao.search(category, city, maxPrice, minRating, sortBy);
     }
 
+    public List<ProviderProfile> getPendingProviders() {
+        return providerDao.findPendingApproval();
+    }
+
     public Map<String, Object> getProviderDetails(Long id) {
         ProviderProfile p = providerDao.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Provider not found with ID " + id));
+        return buildProviderDetailsMap(p);
+    }
 
-        List<ProviderCustomService> services = providerDao.getProviderServices(id);
-        List<Review> reviews = reviewDao.findByProvider(id);
+    public Map<String, Object> getProviderDetailsByUserId(Long userId) {
+        ProviderProfile p = providerDao.findByUserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("No provider profile found for user ID " + userId));
+        return buildProviderDetailsMap(p);
+    }
+
+    private Map<String, Object> buildProviderDetailsMap(ProviderProfile p) {
+        List<ProviderCustomService> services = providerDao.getProviderServices(p.getId());
+        List<Review> reviews = reviewDao.findByProvider(p.getId());
 
         Map<String, Object> response = new HashMap<>();
         response.put("id", p.getId());
@@ -46,10 +67,12 @@ public class ProviderService {
         response.put("experience", p.getExperienceYears() + " years");
         response.put("experienceYears", p.getExperienceYears());
         response.put("serviceArea", p.getServiceArea());
-        response.put("city", p.getServiceArea().split(",")[0].trim());
+        response.put("city", p.getServiceArea() != null ? p.getServiceArea().split(",")[0].trim() : "Local");
         response.put("avatar", p.getProfileImage() != null ? p.getProfileImage() : "https://images.unsplash.com/photo-1540569014015-19a7be504e3a?w=150");
         response.put("isVerified", p.isVerified());
         response.put("isAvailable", p.isAvailable());
+        response.put("approvalStatus", p.getApprovalStatus());
+        response.put("rejectionReason", p.getRejectionReason());
         response.put("rating", p.getRatingAvg() != null ? p.getRatingAvg().doubleValue() : 0.0);
         response.put("reviewsCount", p.getRatingCount());
         response.put("startingPrice", p.getStartingPrice());
@@ -61,11 +84,33 @@ public class ProviderService {
         return response;
     }
 
-    public void approveProvider(Long id) {
-        providerDao.updateVerification(id, true);
+    public void approveProvider(Long id, Long adminId) {
+        ProviderProfile p = providerDao.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Provider not found with ID " + id));
+
+        providerDao.updateApprovalStatus(id, "APPROVED", null);
+
+        userDao.findById(p.getUserId()).ifPresent(u -> {
+            emailService.sendProviderApprovalNotification(u.getEmail(), p.getProviderName(), true, null);
+        });
+
+        if (adminId != null) {
+            auditDao.log(adminId, "APPROVE_PROVIDER", "PROVIDER", id, "Approved provider business: " + p.getBusinessName());
+        }
     }
 
-    public void rejectProvider(Long id) {
-        providerDao.updateVerification(id, false);
+    public void rejectProvider(Long id, String reason, Long adminId) {
+        ProviderProfile p = providerDao.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Provider not found with ID " + id));
+
+        providerDao.updateApprovalStatus(id, "REJECTED", reason);
+
+        userDao.findById(p.getUserId()).ifPresent(u -> {
+            emailService.sendProviderApprovalNotification(u.getEmail(), p.getProviderName(), false, reason);
+        });
+
+        if (adminId != null) {
+            auditDao.log(adminId, "REJECT_PROVIDER", "PROVIDER", id, "Rejected provider. Reason: " + reason);
+        }
     }
 }

@@ -46,23 +46,23 @@ const Api = {
   async request(endpoint, options = {}) {
     const isOnline = await this.checkBackend();
     if (!isOnline) {
+      // Disallow fake auth and write operations when backend is offline
+      if (endpoint.startsWith('/auth') || endpoint.startsWith('/admin') || (options.method && options.method !== 'GET')) {
+        throw new Error('ServiceConnect backend is currently offline. Please ensure the Spring Boot server is running on port 8080.');
+      }
       return this.mockHandler(endpoint, options);
     }
 
     const url = `${API_BASE_URL}${endpoint}`;
     const headers = { ...this.getAuthHeaders(), ...(options.headers || {}) };
     
-    try {
-      const response = await fetch(url, { ...options, headers });
-      const data = await response.json().catch(() => null);
-      if (!response.ok) {
-        throw new Error(data && data.message ? data.message : `HTTP ${response.status}`);
-      }
-      return data;
-    } catch (err) {
-      console.warn(`Backend request failed for ${endpoint}, falling back to mock`, err);
-      return this.mockHandler(endpoint, options);
+    const response = await fetch(url, { ...options, headers });
+    const data = await response.json().catch(() => null);
+    if (!response.ok) {
+      const errMsg = (data && data.message) ? data.message : `Server Error: HTTP ${response.status}`;
+      throw new Error(errMsg);
     }
+    return data;
   },
 
   // -------------------------------------------------------------
