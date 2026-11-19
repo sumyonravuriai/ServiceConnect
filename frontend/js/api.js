@@ -4,7 +4,20 @@
  * Includes rich realistic fallback data for standalone frontend previews.
  */
 
-const API_BASE_URL = 'http://localhost:8080/api';
+// Dynamically resolve REST API Base URL for local development and live cloud/production deployments
+const getApiBaseUrl = () => {
+  const configured = localStorage.getItem('sc_api_url');
+  if (configured) return configured;
+  if (window.location.port === '8080' || window.location.pathname.startsWith('/api')) {
+    return '/api';
+  }
+  if (window.location.hostname && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    return `${window.location.protocol}//${window.location.hostname}:8080/api`;
+  }
+  return 'http://localhost:8080/api';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 const Api = {
   // Flag to check if backend is reachable

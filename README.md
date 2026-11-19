@@ -222,7 +222,7 @@ docker-compose up --build
 ```
 - **Frontend App**: `http://localhost:8000`
 - **Backend REST API**: `http://localhost:8080/api`
-- **MySQL Database**: `localhost:3306` (pre-seeded with schema & sample data)
+- **MySQL Database**: `localhost:3306` (configured by default with clean master seed `production_seed.sql`)
 
 ---
 
@@ -237,10 +237,17 @@ docker-compose up --build
    ```sql
    SOURCE database/schema.sql;
    ```
-3. Populate with seed sample data:
-   ```sql
-   SOURCE database/sample_data.sql;
-   ```
+3. Populate database according to your deployment mode:
+   - **For Real-Time Live Production (Clean start)**:
+     ```sql
+     SOURCE database/production_seed.sql;
+     ```
+     *(Seeds ONLY master categories, standard services catalog, and system admin `admin@serviceconnect.com`. ZERO dummy users, ZERO dummy providers, ZERO fake bookings/reviews!)*
+   - **For College Demo / Testing Presentation**:
+     ```sql
+     SOURCE database/sample_data.sql;
+     ```
+     *(Seeds realistic pre-populated test data with customers, providers, past bookings, and verified reviews).*
 
 ### 2. Backend Setup (Java Spring Boot)
 1. Ensure Java 21 LTS is configured:
