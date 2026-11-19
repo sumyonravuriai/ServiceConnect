@@ -19,6 +19,14 @@ services:
       - key: JWT_SECRET
         generateValue: true
       - key: FRONTEND_URL
+        value: https://serviceconnect-web.vercel.app
+      - key: APP_BASE_URL
+        value: https://serviceconnect-web.vercel.app
+      - key: MAIL_FROM
+        value: onboarding@resend.dev
+      - key: RESEND_API_KEY
+        sync: false
+      - key: BREVO_API_KEY
         sync: false
 
   # 2. Static Frontend Web Application

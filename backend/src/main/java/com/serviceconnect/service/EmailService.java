@@ -10,6 +10,13 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+
 @Service
 public class EmailService {
 
@@ -17,10 +24,16 @@ public class EmailService {
 
     private final JavaMailSender mailSender;
 
-    @Value("${app.mail.from:noreply@serviceconnect.com}")
+    @Value("${resend.api-key:}")
+    private String resendApiKey;
+
+    @Value("${brevo.api-key:}")
+    private String brevoApiKey;
+
+    @Value("${app.mail.from:onboarding@resend.dev}")
     private String fromEmail;
 
-    @Value("${app.base-url:http://localhost:8000}")
+    @Value("${app.base-url:https://serviceconnect-web.vercel.app}")
     private String appBaseUrl;
 
     public EmailService(@Autowired(required = false) JavaMailSender mailSender) {
@@ -163,11 +176,24 @@ public class EmailService {
     }
 
     private void sendEmail(String toEmail, String subject, String htmlBody) {
-        // Log to console for development visibility
+        // Log to console for real-time visibility in Render deployment logs
         log.info("\n==================== [OUTGOING EMAIL DISPATCH] ====================" +
                 "\nTo: {}\nSubject: {}\n--------------------------------------------------------------------\n{}\n" +
                 "===================================================================", toEmail, subject, htmlBody);
 
+        // 1. Prioritize Resend HTTP REST API (Over standard HTTPS port 443 - Never blocked on Render)
+        if (resendApiKey != null && !resendApiKey.isBlank()) {
+            boolean sent = sendViaResendHttp(toEmail, subject, htmlBody);
+            if (sent) return;
+        }
+
+        // 2. Brevo HTTP REST API (Over standard HTTPS port 443 - Never blocked on Render)
+        if (brevoApiKey != null && !brevoApiKey.isBlank()) {
+            boolean sent = sendViaBrevoHttp(toEmail, subject, htmlBody);
+            if (sent) return;
+        }
+
+        // 3. Fallback to JavaMailSender SMTP (Note: Free cloud hosts like Render block outbound ports 25, 465, and 587)
         if (mailSender != null) {
             try {
                 MimeMessage message = mailSender.createMimeMessage();
@@ -177,10 +203,137 @@ public class EmailService {
                 helper.setSubject(subject);
                 helper.setText(htmlBody, true);
                 mailSender.send(message);
-                log.info("Email successfully sent via SMTP to {}", toEmail);
+                log.info("✓ Email successfully sent via SMTP to {}", toEmail);
             } catch (Exception ex) {
-                log.warn("SMTP delivery attempt to {} failed ({}), email was logged to stdout.", toEmail, ex.getMessage());
+                log.warn("SMTP delivery attempt to {} failed: {}. (Render blocks outbound SMTP ports 25/465/587 by default; set RESEND_API_KEY in Render Environment to deliver via HTTPS port 443).", toEmail, ex.getMessage());
             }
         }
+    }
+
+    private boolean sendViaResendHttp(String toEmail, String subject, String htmlBody) {
+        try {
+            String sender = fromEmail;
+            if (sender == null || sender.isBlank() || sender.contains("localhost") || sender.contains("noreply@serviceconnect.com")) {
+                sender = "ServiceConnect <onboarding@resend.dev>";
+            } else if (!sender.contains("<")) {
+                sender = "ServiceConnect <" + sender + ">";
+            }
+
+            String jsonPayload = """
+                {
+                    "from": "%s",
+                    "to": ["%s"],
+                    "subject": "%s",
+                    "html": "%s"
+                }
+                """.formatted(
+                    escapeJson(sender),
+                    escapeJson(toEmail),
+                    escapeJson(subject),
+                    escapeJson(htmlBody)
+                );
+
+            HttpClient client = HttpClient.newBuilder()
+                    .connectTimeout(Duration.ofSeconds(10))
+                    .build();
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create("https://api.resend.com/emails"))
+                    .header("Authorization", "Bearer " + resendApiKey.trim())
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(jsonPayload, StandardCharsets.UTF_8))
+                    .timeout(Duration.ofSeconds(15))
+                    .build();
+
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() >= 200 && response.statusCode() < 300) {
+                log.info("✓ Email successfully delivered to {} via Resend HTTPS API (HTTP {})", toEmail, response.statusCode());
+                return true;
+            } else {
+                log.warn("Resend API delivery failed with status {}: {}", response.statusCode(), response.body());
+                return false;
+            }
+        } catch (Exception e) {
+            log.warn("Error calling Resend HTTPS API: {}", e.getMessage());
+            return false;
+        }
+    }
+
+    private boolean sendViaBrevoHttp(String toEmail, String subject, String htmlBody) {
+        try {
+            String senderEmail = fromEmail;
+            if (senderEmail == null || senderEmail.isBlank() || senderEmail.contains("noreply@serviceconnect.com") || senderEmail.contains("localhost")) {
+                senderEmail = "serviceconnect@resend.dev";
+            }
+            if (senderEmail.contains("<")) {
+                senderEmail = senderEmail.substring(senderEmail.indexOf('<') + 1, senderEmail.indexOf('>')).trim();
+            }
+
+            String jsonPayload = """
+                {
+                    "sender": { "name": "ServiceConnect", "email": "%s" },
+                    "to": [{ "email": "%s" }],
+                    "subject": "%s",
+                    "htmlContent": "%s"
+                }
+                """.formatted(
+                    escapeJson(senderEmail),
+                    escapeJson(toEmail),
+                    escapeJson(subject),
+                    escapeJson(htmlBody)
+                );
+
+            HttpClient client = HttpClient.newBuilder()
+                    .connectTimeout(Duration.ofSeconds(10))
+                    .build();
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create("https://api.brevo.com/v3/smtp/email"))
+                    .header("api-key", brevoApiKey.trim())
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(jsonPayload, StandardCharsets.UTF_8))
+                    .timeout(Duration.ofSeconds(15))
+                    .build();
+
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() >= 200 && response.statusCode() < 300) {
+                log.info("✓ Email successfully delivered to {} via Brevo HTTPS API (HTTP {})", toEmail, response.statusCode());
+                return true;
+            } else {
+                log.warn("Brevo API delivery failed with status {}: {}", response.statusCode(), response.body());
+                return false;
+            }
+        } catch (Exception e) {
+            log.warn("Error calling Brevo HTTPS API: {}", e.getMessage());
+            return false;
+        }
+    }
+
+    private String escapeJson(String input) {
+        if (input == null) return "";
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < input.length(); i++) {
+            char c = input.charAt(i);
+            switch (c) {
+                case '"' -> sb.append("\\\"");
+                case '\\' -> sb.append("\\\\");
+                case '\b' -> sb.append("\\b");
+                case '\f' -> sb.append("\\f");
+                case '\n' -> sb.append("\\n");
+                case '\r' -> sb.append("\\r");
+                case '\t' -> sb.append("\\t");
+                default -> {
+                    if (c < ' ') {
+                        String t = "000" + Integer.toHexString(c);
+                        sb.append("\\u").append(t.substring(t.length() - 4));
+                    } else {
+                        sb.append(c);
+                    }
+                }
+            }
+        }
+        return sb.toString();
     }
 }
