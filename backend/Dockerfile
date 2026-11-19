@@ -1,10 +1,10 @@
 # =============================================================================
 # ServiceConnect Backend Dockerfile
-# Multi-stage production build using Eclipse Adoptium JDK 21
+# Multi-stage production build using Eclipse Temurin JDK/JRE 21 (Ubuntu/Jammy)
 # =============================================================================
 
 # Build stage
-FROM eclipse-adoptium:21-jdk AS builder
+FROM eclipse-temurin:21-jdk AS builder
 WORKDIR /app
 
 # Copy Maven Wrapper and POM
@@ -17,8 +17,8 @@ RUN apt-get update && \
     mvn clean package -DskipTests && \
     rm -rf /var/lib/apt/lists/*
 
-# Runtime stage
-FROM eclipse-adoptium:21-jre
+# Runtime stage (Ubuntu / Jammy based JRE)
+FROM eclipse-temurin:21-jre
 WORKDIR /app
 
 # Non-root user for security (Ubuntu/Debian syntax)
