@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="../css/styles.css">
   <link rel="stylesheet" href="../css/dashboard.css">
 </head>
@@ -149,12 +150,15 @@
 
       <!-- SECTION: Job Requests Table -->
       <div id="sectionRequests">
-        <!-- Segmented Filter Tabs -->
-        <div class="filter-tabs">
-          <div class="filter-tab active" onclick="filterProviderJobs('ALL', this)">All Jobs (<span id="pCountAll">0</span>)</div>
-          <div class="filter-tab" onclick="filterProviderJobs('PENDING', this)">New Requests (<span id="pCountPending">0</span>)</div>
-          <div class="filter-tab" onclick="filterProviderJobs('ACCEPTED', this)">In Progress (<span id="pCountAccepted">0</span>)</div>
-          <div class="filter-tab" onclick="filterProviderJobs('COMPLETED', this)">Completed (<span id="pCountCompleted">0</span>)</div>
+        <!-- Segmented Filter Tabs & History Clearing -->
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1.25rem;">
+          <div class="filter-tabs" style="margin-bottom: 0;">
+            <div class="filter-tab active" onclick="filterProviderJobs('ALL', this)">All Jobs (<span id="pCountAll">0</span>)</div>
+            <div class="filter-tab" onclick="filterProviderJobs('PENDING', this)">New Requests (<span id="pCountPending">0</span>)</div>
+            <div class="filter-tab" onclick="filterProviderJobs('ACCEPTED', this)">In Progress (<span id="pCountAccepted">0</span>)</div>
+            <div class="filter-tab" onclick="filterProviderJobs('COMPLETED', this)">Completed (<span id="pCountCompleted">0</span>)</div>
+          </div>
+          <button type="button" class="btn-clear-history" onclick="clearProviderPastJobs()">🧹 Clear Completed History</button>
         </div>
 
         <div class="table-responsive">
@@ -272,6 +276,7 @@
     </div>
   </div>
 
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="../js/api.js"></script>
   <script src="../js/auth.js"></script>
   <script src="../js/main.js"></script>
@@ -474,10 +479,12 @@
 
                 ${b.status === 'COMPLETED' ? `
                   <span style="font-size: var(--font-size-xs); color: var(--status-completed); font-weight: 700;">✓ Finished</span>
+                  <button class="btn-delete-row" onclick="deleteProviderJob(${b.id})" title="Delete past job from history">🗑️</button>
                 ` : ''}
 
                 ${b.status === 'CANCELLED' || b.status === 'REJECTED' ? `
                   <span style="font-size: var(--font-size-xs); color: var(--status-cancelled); font-weight: 600;">Closed</span>
+                  <button class="btn-delete-row" onclick="deleteProviderJob(${b.id})" title="Delete record from history">🗑️</button>
                 ` : ''}
               </div>
             </td>
@@ -562,6 +569,28 @@
           ` : ''}
         </div>
 
+        <!-- Live GPS Tracker & Dispatch Map Card -->
+        <div class="gps-tracker-card" id="providerGpsTrackerSection">
+          <div class="gps-tracker-header">
+            <div class="gps-tracker-title">
+              <span class="gps-radar-beacon"></span>
+              <span>Live Doorstep Dispatch & Real-Time Navigation</span>
+            </div>
+            <div class="gps-stats-badges">
+              <span class="gps-pill eta" id="provGpsEta">⏱️ ETA ~8 mins</span>
+              <span class="gps-pill" id="provGpsDist">📍 1.8 km to doorstep</span>
+            </div>
+          </div>
+          <div id="providerLiveGpsMap" class="gps-map-container"></div>
+          <div class="gps-hud-bar">
+            <span class="gps-hud-status" id="provGpsStatusText">📍 Navigation active to client destination</span>
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+              <button type="button" class="gps-control-btn" id="btnProviderRealGps" onclick="toggleProviderRealGps(${b.id})">📡 Broadcast Real Device GPS</button>
+              <button type="button" class="gps-control-btn secondary" onclick="simulateProviderDrive(${b.id})">🚗 Simulate Route</button>
+            </div>
+          </div>
+        </div>
+
         <!-- Real-Time Direct In-App Chat With Customer -->
         <div class="chat-container">
           <div class="chat-header">
@@ -580,6 +609,227 @@
 
       document.getElementById('providerJobModal').classList.add('active');
       loadProviderChatMessages(id);
+      setTimeout(() => initProviderLiveGpsMap(b), 120);
+    }
+
+    // Provider GPS state tracking
+    let providerMapInstance = null;
+    let providerTechMarker = null;
+    let providerHomeMarker = null;
+    let providerRouteLine = null;
+    let providerGpsPollInterval = null;
+    let providerGeoWatchId = null;
+    let providerSimStep = 0;
+
+    async function initProviderLiveGpsMap(b) {
+      const mapDiv = document.getElementById('providerLiveGpsMap');
+      if (!mapDiv || typeof L === 'undefined') return;
+
+      if (providerMapInstance) {
+        try { providerMapInstance.remove(); } catch (e) {}
+        providerMapInstance = null;
+      }
+      if (providerGpsPollInterval) {
+        clearInterval(providerGpsPollInterval);
+        providerGpsPollInterval = null;
+      }
+
+      let custLat = 17.3850 + (b.id % 10) * 0.005;
+      let custLng = 78.4867 + (b.id % 10) * 0.005;
+      let provLat = custLat + 0.0120;
+      let provLng = custLng - 0.0105;
+      let dist = 1.8;
+      let eta = 8;
+      let statusTxt = 'EN_ROUTE';
+
+      try {
+        const locRes = await Api.getBookingLocation(b.id);
+        if (locRes && locRes.data) {
+          const d = locRes.data;
+          if (d.customerLat) custLat = d.customerLat;
+          if (d.customerLng) custLng = d.customerLng;
+          if (d.providerLat) provLat = d.providerLat;
+          if (d.providerLng) provLng = d.providerLng;
+          if (d.distanceKm !== undefined) dist = d.distanceKm;
+          if (d.etaMinutes !== undefined) eta = d.etaMinutes;
+          if (d.statusText) statusTxt = d.statusText;
+        }
+      } catch (err) {
+        console.warn('Provider GPS location fetch fallback:', err);
+      }
+
+      updateProviderGpsHud(dist, eta, statusTxt);
+
+      providerMapInstance = L.map('providerLiveGpsMap', { zoomControl: true }).setView([provLat, provLng], 14);
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors',
+        maxZoom: 19
+      }).addTo(providerMapInstance);
+
+      const doorstepIcon = L.divIcon({
+        className: 'custom-leaflet-div',
+        html: '<div class="doorstep-marker-pin" title="Customer Doorstep">🏠</div>',
+        iconSize: [36, 36],
+        iconAnchor: [18, 18]
+      });
+
+      const techIcon = L.divIcon({
+        className: 'custom-leaflet-div',
+        html: '<div class="technician-marker-pin" title="My Current Location">🚗</div>',
+        iconSize: [36, 36],
+        iconAnchor: [18, 18]
+      });
+
+      providerHomeMarker = L.marker([custLat, custLng], { icon: doorstepIcon }).addTo(providerMapInstance)
+        .bindPopup(`<strong>Customer Doorstep</strong><br>${b.address || 'Service Location'}`);
+
+      providerTechMarker = L.marker([provLat, provLng], { icon: techIcon }).addTo(providerMapInstance)
+        .bindPopup(`<strong>Your Vehicle</strong><br>GPS Navigation Active`);
+
+      providerRouteLine = L.polyline([[provLat, provLng], [custLat, custLng]], {
+        color: '#2563eb',
+        weight: 4,
+        dashArray: '6, 8',
+        opacity: 0.85
+      }).addTo(providerMapInstance);
+
+      providerMapInstance.fitBounds([[provLat, provLng], [custLat, custLng]], { padding: [35, 35] });
+      setTimeout(() => providerMapInstance.invalidateSize(), 200);
+    }
+
+    function updateProviderGpsHud(dist, eta, status) {
+      const etaEl = document.getElementById('provGpsEta');
+      const distEl = document.getElementById('provGpsDist');
+      const stEl = document.getElementById('provGpsStatusText');
+
+      if (etaEl) etaEl.textContent = eta > 0 ? `⏱️ ETA ~${eta} mins` : '✓ At Doorstep';
+      if (distEl) distEl.textContent = dist > 0 ? `📍 ${dist.toFixed(1)} km to doorstep` : '📍 Arrived';
+      if (stEl) {
+        if (dist === 0 || status === 'ARRIVED') {
+          stEl.textContent = '🎉 You have arrived at the customer doorstep address!';
+        } else {
+          stEl.textContent = '📍 Real-time turn navigation active towards customer doorstep';
+        }
+      }
+    }
+
+    function toggleProviderRealGps(bookingId) {
+      const btn = document.getElementById('btnProviderRealGps');
+      if (providerGeoWatchId !== null) {
+        navigator.geolocation.clearWatch(providerGeoWatchId);
+        providerGeoWatchId = null;
+        if (btn) {
+          btn.textContent = '📡 Broadcast Real Device GPS';
+          btn.style.background = 'var(--color-primary)';
+        }
+        showToast('Real device GPS broadcast stopped', 'info');
+        return;
+      }
+
+      if (!('geolocation' in navigator)) {
+        showToast('Geolocation is not supported by your browser', 'error');
+        return;
+      }
+
+      showToast('Connecting to your mobile/device GPS hardware...', 'info');
+      providerGeoWatchId = navigator.geolocation.watchPosition(
+        async (pos) => {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          if (btn) {
+            btn.textContent = '🟢 Broadcasting Live GPS...';
+            btn.style.background = '#10b981';
+          }
+          if (providerTechMarker && providerHomeMarker && providerRouteLine) {
+            providerTechMarker.setLatLng([lat, lng]);
+            const homePos = providerHomeMarker.getLatLng();
+            providerRouteLine.setLatLngs([[lat, lng], [homePos.lat, homePos.lng]]);
+          }
+
+          await Api.updateBookingLocation(bookingId, {
+            providerLat: lat,
+            providerLng: lng,
+            statusText: 'EN_ROUTE'
+          }).catch(() => {});
+        },
+        (err) => {
+          showToast(`GPS Access Denied: ${err.message}. Using simulated coordinates.`, 'error');
+          if (btn) {
+            btn.textContent = '📡 Broadcast Real Device GPS';
+            btn.style.background = 'var(--color-primary)';
+          }
+          providerGeoWatchId = null;
+        },
+        { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
+      );
+    }
+
+    async function simulateProviderDrive(bookingId) {
+      if (!providerTechMarker || !providerHomeMarker) return;
+      providerSimStep = (providerSimStep + 1) % 5;
+
+      const homePos = providerHomeMarker.getLatLng();
+      const currentPos = providerTechMarker.getLatLng();
+
+      const progressFraction = Math.min(1.0, (providerSimStep + 1) * 0.22);
+      const nextLat = currentPos.lat + (homePos.lat - currentPos.lat) * 0.35;
+      const nextLng = currentPos.lng + (homePos.lng - currentPos.lng) * 0.35;
+
+      const remainingDist = Math.max(0.1, (1.8 * (1 - progressFraction))).toFixed(1);
+      const remainingEta = Math.max(1, Math.round(remainingDist * 3.5));
+
+      providerTechMarker.setLatLng([nextLat, nextLng]);
+      if (providerRouteLine) providerRouteLine.setLatLngs([[nextLat, nextLng], [homePos.lat, homePos.lng]]);
+
+      updateProviderGpsHud(Number(remainingDist), remainingEta, 'EN_ROUTE');
+      showToast(`🚗 Vehicle position advanced: ${remainingDist} km away (~${remainingEta} mins)`, 'info');
+
+      await Api.updateBookingLocation(bookingId, {
+        providerLat: nextLat,
+        providerLng: nextLng,
+        distanceKm: Number(remainingDist),
+        etaMinutes: remainingEta,
+        statusText: remainingDist <= 0.2 ? 'ARRIVED' : 'EN_ROUTE'
+      }).catch(() => {});
+    }
+
+    async function deleteProviderJob(id) {
+      if (!confirm('Are you sure you want to permanently delete this job record from your provider history?')) return;
+      try {
+        const res = await Api.deleteBooking(id);
+        if (res && res.success) {
+          showToast('Job record deleted from history', 'info');
+          providerJobs = providerJobs.filter(b => b.id !== id);
+          updateProviderCounts();
+          renderJobsTable();
+        } else {
+          showToast(res.message || 'Unable to delete job', 'error');
+        }
+      } catch (err) {
+        showToast('Error removing job record', 'error');
+      }
+    }
+
+    async function clearProviderPastJobs() {
+      const provId = (currentProviderInfo && currentProviderInfo.id) ? currentProviderInfo.id : null;
+      if (!provId) {
+        showToast('Provider profile not loaded yet', 'error');
+        return;
+      }
+      if (!confirm('Clear all completed, cancelled, and rejected jobs from your provider history?')) return;
+
+      try {
+        const res = await Api.clearProviderHistory(provId);
+        if (res && res.success) {
+          showToast(res.message || 'Past job history cleared', 'success');
+          await loadProviderBookings();
+        } else {
+          showToast('Failed to clear provider history', 'error');
+        }
+      } catch (err) {
+        showToast('Error clearing past jobs', 'error');
+      }
     }
 
     async function loadProviderChatMessages(bookingId) {
@@ -621,6 +871,18 @@
     function closeProviderJobModal() {
       document.getElementById('providerJobModal').classList.remove('active');
       activeJobIdForChat = null;
+      if (providerGeoWatchId !== null) {
+        navigator.geolocation.clearWatch(providerGeoWatchId);
+        providerGeoWatchId = null;
+      }
+      if (providerGpsPollInterval) {
+        clearInterval(providerGpsPollInterval);
+        providerGpsPollInterval = null;
+      }
+      if (providerMapInstance) {
+        try { providerMapInstance.remove(); } catch (e) {}
+        providerMapInstance = null;
+      }
     }
 
     function filterProviderJobs(status, el) {

@@ -652,3 +652,234 @@
     display: none !important;
   }
 }
+
+/* ==========================================================================
+   Advanced Live GPS Tracking & Interactive Radar Map Styling
+   ========================================================================== */
+.gps-tracker-card {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(240, 249, 255, 0.85));
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(37, 99, 235, 0.25);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+  position: relative;
+  overflow: hidden;
+}
+
+.gps-tracker-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.85rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.gps-tracker-title {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: var(--font-size-sm);
+  font-weight: 800;
+  color: var(--color-primary);
+  letter-spacing: -0.01em;
+}
+
+.gps-radar-beacon {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: #10b981;
+  box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  animation: radar-ping 1.8s infinite cubic-bezier(0, 0, 0.2, 1);
+  display: inline-block;
+}
+
+@keyframes radar-ping {
+  0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.8); }
+  70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+.gps-stats-badges {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.gps-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background-color: #ffffff;
+  border: 1px solid rgba(37, 99, 235, 0.2);
+  padding: 0.25rem 0.65rem;
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-2xs);
+  font-weight: 700;
+  color: var(--color-primary);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.04);
+}
+
+.gps-pill.eta {
+  background: linear-gradient(135deg, #eff6ff, #dbeafe);
+  color: var(--color-accent);
+  border-color: var(--color-accent-border);
+}
+
+.gps-map-container {
+  height: 280px;
+  width: 100%;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  overflow: hidden;
+  position: relative;
+  z-index: 1;
+  background-color: #f1f5f9;
+}
+
+.gps-hud-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 0.85rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(226, 232, 240, 0.8);
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.gps-hud-status {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  font-weight: 600;
+}
+
+.gps-control-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  background: var(--color-primary);
+  color: #ffffff;
+  border: none;
+}
+
+.gps-control-btn:hover {
+  background: var(--color-accent);
+  transform: translateY(-1px);
+}
+
+.gps-control-btn.secondary {
+  background: #ffffff;
+  color: var(--color-primary);
+  border: 1px solid var(--color-border);
+}
+
+.gps-control-btn.secondary:hover {
+  background: var(--color-surface-alt);
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+/* Custom Marker CSS for Leaflet */
+.technician-marker-pin {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  border: 3px solid #ffffff;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-size: 16px;
+  animation: tech-pulse 2s infinite;
+}
+
+@keyframes tech-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.6); }
+  70% { box-shadow: 0 0 0 12px rgba(37, 99, 235, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
+}
+
+.doorstep-marker-pin {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #059669, #047857);
+  border: 3px solid #ffffff;
+  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-size: 16px;
+}
+
+/* Modern Dynamic Card Micro-interactions */
+.stat-card {
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 20px -5px rgba(15, 23, 42, 0.08);
+  border-color: var(--color-accent-border);
+}
+
+.data-table tbody tr {
+  transition: background-color 0.15s ease;
+}
+
+.data-table tbody tr:hover {
+  background-color: rgba(248, 250, 252, 0.85);
+}
+
+.btn-delete-row {
+  color: var(--status-cancelled);
+  border: 1px solid var(--status-cancelled-border);
+  background: var(--status-cancelled-bg);
+  padding: 0.25rem 0.55rem;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-2xs);
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn-delete-row:hover {
+  background-color: var(--status-cancelled);
+  color: #ffffff;
+}
+
+.btn-clear-history {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.85rem;
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+  background: #ffffff;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn-clear-history:hover {
+  color: var(--status-cancelled);
+  border-color: var(--status-cancelled-border);
+  background: var(--status-cancelled-bg);
+}

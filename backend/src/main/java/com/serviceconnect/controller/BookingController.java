@@ -1,6 +1,7 @@
 package com.serviceconnect.controller;
 
 import com.serviceconnect.dto.ApiResponse;
+import com.serviceconnect.dto.BookingLocationDto;
 import com.serviceconnect.dto.BookingRequest;
 import com.serviceconnect.dto.StatusUpdateRequest;
 import com.serviceconnect.model.Booking;
@@ -85,5 +86,37 @@ public class BookingController {
 
         Booking updated = bookingService.updateStatus(id, "CANCELLED", reason);
         return ResponseEntity.ok(ApiResponse.ok("Booking cancelled", updated));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse<Void>> deleteBooking(@PathVariable Long id) {
+        bookingService.deleteBooking(id);
+        return ResponseEntity.ok(ApiResponse.ok("Booking record removed successfully", null));
+    }
+
+    @DeleteMapping("/provider/{providerId}/history")
+    public ResponseEntity<ApiResponse<Integer>> clearProviderHistory(@PathVariable Long providerId) {
+        int cleared = bookingService.clearProviderHistory(providerId);
+        return ResponseEntity.ok(ApiResponse.ok("Cleared " + cleared + " past job records from provider history", cleared));
+    }
+
+    @DeleteMapping("/customer/{customerId}/history")
+    public ResponseEntity<ApiResponse<Integer>> clearCustomerHistory(@PathVariable Long customerId) {
+        int cleared = bookingService.clearCustomerHistory(customerId);
+        return ResponseEntity.ok(ApiResponse.ok("Cleared " + cleared + " past appointment records from history", cleared));
+    }
+
+    @GetMapping("/{id}/location")
+    public ResponseEntity<ApiResponse<BookingLocationDto>> getBookingLocation(@PathVariable Long id) {
+        BookingLocationDto loc = bookingService.getBookingLocation(id);
+        return ResponseEntity.ok(ApiResponse.ok(loc));
+    }
+
+    @PostMapping("/{id}/location")
+    public ResponseEntity<ApiResponse<BookingLocationDto>> updateBookingLocation(
+            @PathVariable Long id,
+            @RequestBody BookingLocationDto update) {
+        BookingLocationDto updated = bookingService.updateBookingLocation(id, update);
+        return ResponseEntity.ok(ApiResponse.ok("Live technician GPS coordinates updated", updated));
     }
 }

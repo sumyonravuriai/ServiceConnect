@@ -30,6 +30,9 @@ public class EmailService {
     @Value("${brevo.api-key:}")
     private String brevoApiKey;
 
+    @Value("${brevo.sender-email:}")
+    private String brevoSenderEmail;
+
     @Value("${app.mail.from:onboarding@resend.dev}")
     private String fromEmail;
 
@@ -251,7 +254,7 @@ public class EmailService {
                 log.info("✓ Email successfully delivered to {} via Resend HTTPS API (HTTP {})", toEmail, response.statusCode());
                 return true;
             } else {
-                log.warn("Resend API delivery failed with status {}: {}", response.statusCode(), response.body());
+                log.warn("Resend API delivery failed with status {}: {}. Note: Resend's free test tier (onboarding@resend.dev) delivers only to your own registered account email. To send to any recipient, verify your domain on resend.com or configure BREVO_API_KEY in Render.", response.statusCode(), response.body());
                 return false;
             }
         } catch (Exception e) {
@@ -262,8 +265,11 @@ public class EmailService {
 
     private boolean sendViaBrevoHttp(String toEmail, String subject, String htmlBody) {
         try {
-            String senderEmail = fromEmail;
-            if (senderEmail == null || senderEmail.isBlank() || senderEmail.contains("noreply@serviceconnect.com") || senderEmail.contains("localhost")) {
+            String senderEmail = brevoSenderEmail;
+            if (senderEmail == null || senderEmail.isBlank()) {
+                senderEmail = fromEmail;
+            }
+            if (senderEmail == null || senderEmail.isBlank() || senderEmail.contains("noreply@serviceconnect.com") || senderEmail.contains("localhost") || senderEmail.contains("onboarding@resend.dev")) {
                 senderEmail = "serviceconnect@resend.dev";
             }
             if (senderEmail.contains("<")) {

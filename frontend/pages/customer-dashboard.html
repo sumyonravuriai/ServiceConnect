@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="../css/styles.css">
   <link rel="stylesheet" href="../css/dashboard.css">
 </head>
@@ -110,13 +111,16 @@
 
       <!-- SECTION: Bookings List -->
       <div id="sectionBookings">
-        <!-- Segmented Filter Tabs -->
-        <div class="filter-tabs">
-          <div class="filter-tab active" onclick="filterBookings('ALL', this)">All Appointments (<span id="countAll">0</span>)</div>
-          <div class="filter-tab" onclick="filterBookings('PENDING', this)">Pending (<span id="countPending">0</span>)</div>
-          <div class="filter-tab" onclick="filterBookings('ACCEPTED', this)">In Progress (<span id="countAccepted">0</span>)</div>
-          <div class="filter-tab" onclick="filterBookings('COMPLETED', this)">Completed (<span id="countCompleted">0</span>)</div>
-          <div class="filter-tab" onclick="filterBookings('CANCELLED', this)">Cancelled (<span id="countCancelled">0</span>)</div>
+        <!-- Segmented Filter Tabs & History Controls -->
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1.25rem;">
+          <div class="filter-tabs" style="margin-bottom: 0;">
+            <div class="filter-tab active" onclick="filterBookings('ALL', this)">All Appointments (<span id="countAll">0</span>)</div>
+            <div class="filter-tab" onclick="filterBookings('PENDING', this)">Pending (<span id="countPending">0</span>)</div>
+            <div class="filter-tab" onclick="filterBookings('ACCEPTED', this)">In Progress (<span id="countAccepted">0</span>)</div>
+            <div class="filter-tab" onclick="filterBookings('COMPLETED', this)">Completed (<span id="countCompleted">0</span>)</div>
+            <div class="filter-tab" onclick="filterBookings('CANCELLED', this)">Cancelled (<span id="countCancelled">0</span>)</div>
+          </div>
+          <button type="button" class="btn-clear-history" onclick="clearCustomerPastAppointments()">🧹 Clear Completed History</button>
         </div>
 
         <!-- Bookings Data Table -->
@@ -229,6 +233,7 @@
     </div>
   </div>
 
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="../js/api.js"></script>
   <script src="../js/auth.js"></script>
   <script src="../js/main.js"></script>
@@ -350,6 +355,9 @@
                 <button class="btn btn-outline btn-sm" onclick="viewBookingDetails(${b.id})">Details</button>
                 ${canCancel ? `<button class="btn btn-danger btn-sm" onclick="cancelBooking(${b.id})">Cancel</button>` : ''}
                 ${canReview ? `<button class="btn btn-accent btn-sm" onclick="openReviewModal(${b.id})">Write Review</button>` : ''}
+                ${(b.status === 'COMPLETED' || b.status === 'CANCELLED' || b.status === 'REJECTED') ? `
+                  <button class="btn-delete-row" onclick="deleteCustomerBooking(${b.id})" title="Delete record from history">🗑️</button>
+                ` : ''}
               </div>
             </td>
           </tr>
@@ -427,6 +435,25 @@
             <div class="step-item ${s3}"><div class="step-circle">3</div><div class="step-label">In Progress</div></div>
             <div class="step-item ${s4}"><div class="step-circle">4</div><div class="step-label">Completed</div></div>
           </div>
+
+          <!-- Interactive Live GPS Tracking Map Card -->
+          <div class="gps-tracker-card" id="customerGpsTrackerSection">
+            <div class="gps-tracker-header">
+              <div class="gps-tracker-title">
+                <span class="gps-radar-beacon"></span>
+                <span>Live Technician GPS Tracking</span>
+              </div>
+              <div class="gps-stats-badges">
+                <span class="gps-pill eta" id="custGpsEta">⏱️ ETA ~8 mins</span>
+                <span class="gps-pill" id="custGpsDistance">📍 1.8 km away</span>
+              </div>
+            </div>
+            <div id="customerLiveGpsMap" class="gps-map-container"></div>
+            <div class="gps-hud-bar">
+              <span class="gps-hud-status" id="custGpsStatusText">🚗 Technician is en route towards your doorstep</span>
+              <button type="button" class="gps-control-btn" onclick="simulateCustomerLiveDrive(${b.id})">▶ Simulate Live Movement</button>
+            </div>
+          </div>
         `}
 
         <div class="summary-card" style="margin-bottom: 1rem;">
@@ -466,6 +493,194 @@
 
       document.getElementById('detailsModal').classList.add('active');
       loadChatMessages(id);
+      if (!isCancelled) {
+        setTimeout(() => initCustomerLiveGpsMap(b), 120);
+      }
+    }
+
+    // Live GPS Map state variables
+    let customerMapInstance = null;
+    let customerTechMarker = null;
+    let customerHomeMarker = null;
+    let customerRouteLine = null;
+    let customerGpsPollInterval = null;
+    let customerSimStep = 0;
+
+    async function initCustomerLiveGpsMap(b) {
+      const mapDiv = document.getElementById('customerLiveGpsMap');
+      if (!mapDiv || typeof L === 'undefined') return;
+
+      if (customerMapInstance) {
+        try { customerMapInstance.remove(); } catch (e) {}
+        customerMapInstance = null;
+      }
+      if (customerGpsPollInterval) {
+        clearInterval(customerGpsPollInterval);
+        customerGpsPollInterval = null;
+      }
+
+      // Default baseline coordinates for simulation / display
+      let custLat = 17.3850 + (b.id % 10) * 0.005;
+      let custLng = 78.4867 + (b.id % 10) * 0.005;
+      let provLat = custLat + 0.0120;
+      let provLng = custLng - 0.0105;
+      let dist = 1.8;
+      let eta = 8;
+      let statusTxt = 'EN_ROUTE';
+
+      try {
+        const locRes = await Api.getBookingLocation(b.id);
+        if (locRes && locRes.data) {
+          const d = locRes.data;
+          if (d.customerLat) custLat = d.customerLat;
+          if (d.customerLng) custLng = d.customerLng;
+          if (d.providerLat) provLat = d.providerLat;
+          if (d.providerLng) provLng = d.providerLng;
+          if (d.distanceKm !== undefined) dist = d.distanceKm;
+          if (d.etaMinutes !== undefined) eta = d.etaMinutes;
+          if (d.statusText) statusTxt = d.statusText;
+        }
+      } catch (err) {
+        console.warn('GPS location fetch fallback:', err);
+      }
+
+      updateGpsHudDisplay(dist, eta, statusTxt);
+
+      customerMapInstance = L.map('customerLiveGpsMap', { zoomControl: true }).setView([provLat, provLng], 14);
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors',
+        maxZoom: 19
+      }).addTo(customerMapInstance);
+
+      const doorstepIcon = L.divIcon({
+        className: 'custom-leaflet-div',
+        html: '<div class="doorstep-marker-pin" title="Your Doorstep">🏠</div>',
+        iconSize: [36, 36],
+        iconAnchor: [18, 18]
+      });
+
+      const techIcon = L.divIcon({
+        className: 'custom-leaflet-div',
+        html: '<div class="technician-marker-pin" title="Service Specialist En Route">🚗</div>',
+        iconSize: [36, 36],
+        iconAnchor: [18, 18]
+      });
+
+      customerHomeMarker = L.marker([custLat, custLng], { icon: doorstepIcon }).addTo(customerMapInstance)
+        .bindPopup(`<strong>Your Doorstep</strong><br>${b.address || 'Service Location'}`);
+
+      customerTechMarker = L.marker([provLat, provLng], { icon: techIcon }).addTo(customerMapInstance)
+        .bindPopup(`<strong>${b.providerName || 'Technician'}</strong><br>Dispatched & En Route`);
+
+      customerRouteLine = L.polyline([[provLat, provLng], [custLat, custLng]], {
+        color: '#2563eb',
+        weight: 4,
+        dashArray: '6, 8',
+        opacity: 0.85
+      }).addTo(customerMapInstance);
+
+      customerMapInstance.fitBounds([[provLat, provLng], [custLat, custLng]], { padding: [35, 35] });
+      setTimeout(() => customerMapInstance.invalidateSize(), 200);
+
+      // Real-time polling for live coordinates every 4 seconds
+      customerGpsPollInterval = setInterval(async () => {
+        if (!activeBookingIdForChat) return;
+        try {
+          const res = await Api.getBookingLocation(b.id);
+          if (res && res.data && customerTechMarker && customerRouteLine) {
+            const d = res.data;
+            if (d.providerLat && d.providerLng) {
+              const newPos = [d.providerLat, d.providerLng];
+              customerTechMarker.setLatLng(newPos);
+              customerRouteLine.setLatLngs([newPos, [custLat, custLng]]);
+              updateGpsHudDisplay(d.distanceKm, d.etaMinutes, d.statusText);
+            }
+          }
+        } catch (e) {}
+      }, 4000);
+    }
+
+    function updateGpsHudDisplay(dist, eta, status) {
+      const etaEl = document.getElementById('custGpsEta');
+      const distEl = document.getElementById('custGpsDistance');
+      const stEl = document.getElementById('custGpsStatusText');
+
+      if (etaEl) etaEl.textContent = eta > 0 ? `⏱️ ETA ~${eta} mins` : '✓ At Doorstep';
+      if (distEl) distEl.textContent = dist > 0 ? `📍 ${dist.toFixed(1)} km away` : '📍 Arrived';
+      if (stEl) {
+        if (dist === 0 || status === 'ARRIVED') {
+          stEl.textContent = '🎉 Specialist has arrived at your doorstep location!';
+        } else {
+          stEl.textContent = '🚗 Technician is moving towards your doorstep (Live GPS Active)';
+        }
+      }
+    }
+
+    async function simulateCustomerLiveDrive(bookingId) {
+      if (!customerTechMarker || !customerHomeMarker) return;
+      customerSimStep = (customerSimStep + 1) % 5;
+
+      const homePos = customerHomeMarker.getLatLng();
+      const currentPos = customerTechMarker.getLatLng();
+
+      // Smooth step calculation towards customer home
+      const progressFraction = Math.min(1.0, (customerSimStep + 1) * 0.22);
+      const nextLat = currentPos.lat + (homePos.lat - currentPos.lat) * 0.35;
+      const nextLng = currentPos.lng + (homePos.lng - currentPos.lng) * 0.35;
+
+      const remainingDist = Math.max(0.1, (1.8 * (1 - progressFraction))).toFixed(1);
+      const remainingEta = Math.max(1, Math.round(remainingDist * 3.5));
+
+      customerTechMarker.setLatLng([nextLat, nextLng]);
+      if (customerRouteLine) customerRouteLine.setLatLngs([[nextLat, nextLng], [homePos.lat, homePos.lng]]);
+
+      updateGpsHudDisplay(Number(remainingDist), remainingEta, 'EN_ROUTE');
+      showToast(`🚗 Technician movement updated: ${remainingDist} km away (~${remainingEta} mins)`, 'info');
+
+      // Sync with backend API
+      await Api.updateBookingLocation(bookingId, {
+        providerLat: nextLat,
+        providerLng: nextLng,
+        distanceKm: Number(remainingDist),
+        etaMinutes: remainingEta,
+        statusText: remainingDist <= 0.2 ? 'ARRIVED' : 'EN_ROUTE'
+      }).catch(() => {});
+    }
+
+    async function deleteCustomerBooking(id) {
+      if (!confirm('Are you sure you want to permanently remove this appointment from your history?')) return;
+      try {
+        const res = await Api.deleteBooking(id);
+        if (res && res.success) {
+          showToast('Appointment record deleted from history', 'info');
+          allBookings = allBookings.filter(b => b.id !== id);
+          updateCountsAndStats();
+          renderBookingsTable();
+        } else {
+          showToast(res.message || 'Unable to delete appointment', 'error');
+        }
+      } catch (err) {
+        showToast('Error removing appointment record', 'error');
+      }
+    }
+
+    async function clearCustomerPastAppointments() {
+      const user = Auth.getUser();
+      if (!user) return;
+      if (!confirm('Clear all completed, cancelled, and rejected appointments from your history?')) return;
+
+      try {
+        const res = await Api.clearCustomerHistory(user.id);
+        if (res && res.success) {
+          showToast(res.message || 'Past appointment history cleared', 'success');
+          await loadBookings();
+        } else {
+          showToast('Failed to clear history', 'error');
+        }
+      } catch (err) {
+        showToast('Error clearing past appointments', 'error');
+      }
     }
 
     async function loadChatMessages(bookingId) {
@@ -507,6 +722,14 @@
     function closeDetailsModal() {
       document.getElementById('detailsModal').classList.remove('active');
       activeBookingIdForChat = null;
+      if (customerGpsPollInterval) {
+        clearInterval(customerGpsPollInterval);
+        customerGpsPollInterval = null;
+      }
+      if (customerMapInstance) {
+        try { customerMapInstance.remove(); } catch (e) {}
+        customerMapInstance = null;
+      }
     }
 
     function openInvoiceModal(bookingId) {

@@ -159,6 +159,40 @@ public class BookingDao {
         return jdbcTemplate.update(sql, status, cancellationReason, id);
     }
 
+    public int delete(Long id) {
+        jdbcTemplate.update("DELETE FROM reviews WHERE booking_id = ?", id);
+        jdbcTemplate.update("DELETE FROM chat_messages WHERE booking_id = ?", id);
+        return jdbcTemplate.update("DELETE FROM bookings WHERE id = ?", id);
+    }
+
+    public int deleteCompletedOrCancelledByProvider(Long providerId) {
+        jdbcTemplate.update("""
+            DELETE FROM reviews WHERE booking_id IN (
+                SELECT id FROM bookings WHERE provider_id = ? AND status IN ('COMPLETED', 'CANCELLED', 'REJECTED')
+            )
+        """, providerId);
+        jdbcTemplate.update("""
+            DELETE FROM chat_messages WHERE booking_id IN (
+                SELECT id FROM bookings WHERE provider_id = ? AND status IN ('COMPLETED', 'CANCELLED', 'REJECTED')
+            )
+        """, providerId);
+        return jdbcTemplate.update("DELETE FROM bookings WHERE provider_id = ? AND status IN ('COMPLETED', 'CANCELLED', 'REJECTED')", providerId);
+    }
+
+    public int deleteCompletedOrCancelledByCustomer(Long customerId) {
+        jdbcTemplate.update("""
+            DELETE FROM reviews WHERE booking_id IN (
+                SELECT id FROM bookings WHERE customer_id = ? AND status IN ('COMPLETED', 'CANCELLED', 'REJECTED')
+            )
+        """, customerId);
+        jdbcTemplate.update("""
+            DELETE FROM chat_messages WHERE booking_id IN (
+                SELECT id FROM bookings WHERE customer_id = ? AND status IN ('COMPLETED', 'CANCELLED', 'REJECTED')
+            )
+        """, customerId);
+        return jdbcTemplate.update("DELETE FROM bookings WHERE customer_id = ? AND status IN ('COMPLETED', 'CANCELLED', 'REJECTED')", customerId);
+    }
+
     public int count() {
         String sql = "SELECT COUNT(*) FROM bookings";
         Integer count = jdbcTemplate.queryForObject(sql, Integer.class);

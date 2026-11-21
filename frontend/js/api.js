@@ -423,6 +423,29 @@ const Api = {
     return res;
   },
 
+  async deleteBooking(id) {
+    return this.request(`/bookings/${id}`, { method: 'DELETE' });
+  },
+
+  async clearProviderHistory(providerId) {
+    return this.request(`/bookings/provider/${providerId}/history`, { method: 'DELETE' });
+  },
+
+  async clearCustomerHistory(customerId) {
+    return this.request(`/bookings/customer/${customerId}/history`, { method: 'DELETE' });
+  },
+
+  async getBookingLocation(bookingId) {
+    return this.request(`/bookings/${bookingId}/location`);
+  },
+
+  async updateBookingLocation(bookingId, locationData) {
+    return this.request(`/bookings/${bookingId}/location`, {
+      method: 'POST',
+      body: JSON.stringify(locationData)
+    });
+  },
+
   // Fallback Mock API Handler
   async mockHandler(endpoint, options) {
     const method = (options.method || 'GET').toUpperCase();
@@ -516,6 +539,61 @@ const Api = {
         return { success: true, message: `Booking status updated to ${body.status}`, data: booking };
       }
       return { success: false, message: 'Booking not found' };
+    }
+
+    // Bookings - Delete single booking
+    if (path.startsWith('/bookings/') && method === 'DELETE' && !path.includes('/history')) {
+      const id = Number(path.split('/')[2]);
+      this.mockData.bookings = this.mockData.bookings.filter(b => b.id !== id);
+      return { success: true, message: 'Booking record removed successfully' };
+    }
+
+    // Bookings - Clear Provider history
+    if (path.startsWith('/bookings/provider/') && path.endsWith('/history') && method === 'DELETE') {
+      const provId = Number(path.split('/')[3]);
+      const before = this.mockData.bookings.length;
+      this.mockData.bookings = this.mockData.bookings.filter(b => !(b.providerId === provId && ['COMPLETED', 'CANCELLED', 'REJECTED'].includes(b.status)));
+      const count = before - this.mockData.bookings.length;
+      return { success: true, message: `Cleared ${count} past records`, data: count };
+    }
+
+    // Bookings - Clear Customer history
+    if (path.startsWith('/bookings/customer/') && path.endsWith('/history') && method === 'DELETE') {
+      const custId = Number(path.split('/')[3]);
+      const before = this.mockData.bookings.length;
+      this.mockData.bookings = this.mockData.bookings.filter(b => !(b.customerId === custId && ['COMPLETED', 'CANCELLED', 'REJECTED'].includes(b.status)));
+      const count = before - this.mockData.bookings.length;
+      return { success: true, message: `Cleared ${count} past records`, data: count };
+    }
+
+    // Live GPS Location - GET
+    if (path.startsWith('/bookings/') && path.endsWith('/location') && method === 'GET') {
+      const id = Number(path.split('/')[2]);
+      const booking = this.mockData.bookings.find(b => b.id === id) || { id, status: 'IN_PROGRESS' };
+      const baseLat = 17.3850 + (id % 10) * 0.005;
+      const baseLng = 78.4867 + (id % 10) * 0.005;
+      const isCompleted = booking.status === 'COMPLETED';
+      return {
+        success: true,
+        data: {
+          bookingId: id,
+          providerLat: isCompleted ? baseLat : baseLat + 0.0125,
+          providerLng: isCompleted ? baseLng : baseLng - 0.0110,
+          customerLat: baseLat,
+          customerLng: baseLng,
+          distanceKm: isCompleted ? 0.0 : 1.8,
+          etaMinutes: isCompleted ? 0 : 8,
+          statusText: isCompleted ? 'ARRIVED' : 'EN_ROUTE'
+        }
+      };
+    }
+
+    // Live GPS Location - POST update
+    if (path.startsWith('/bookings/') && path.endsWith('/location') && method === 'POST') {
+      const id = Number(path.split('/')[2]);
+      const body = JSON.parse(options.body || '{}');
+      this.notifySubscribers('LIVE_GPS_UPDATE', { bookingId: id, ...body });
+      return { success: true, message: 'GPS coordinates updated', data: body };
     }
 
     // Reviews - Create
