@@ -264,7 +264,7 @@ public class AuthService {
         String cleanEmail = req.getEmail().trim().toLowerCase();
         userDao.findByEmail(cleanEmail).ifPresent(user -> {
             String token = UUID.randomUUID().toString();
-            LocalDateTime expiresAt = LocalDateTime.now().plusMinutes(15);
+            LocalDateTime expiresAt = LocalDateTime.now().plusMinutes(60);
             passwordResetDao.create(user.getId(), token, expiresAt);
             emailService.sendPasswordResetEmail(user.getEmail(), user.getFullName(), token);
         });
@@ -282,6 +282,14 @@ public class AuthService {
         var recordOpt = passwordResetDao.findByToken(token);
         if (recordOpt.isEmpty()) {
             throw new BadRequestException("Invalid, expired, or already used password reset link. Please request a new one.");
+        }
+
+        var record = recordOpt.get();
+        Object expiresObj = record.get("expires_at");
+        if (expiresObj instanceof java.sql.Timestamp ts) {
+            if (ts.toLocalDateTime().isBefore(LocalDateTime.now())) {
+                throw new BadRequestException("This password reset link has expired (valid for 60 minutes). Please request a new recovery link.");
+            }
         }
 
         if (req.getNewPassword() == null || req.getNewPassword().length() < 8) {

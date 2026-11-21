@@ -43,8 +43,29 @@ public class EmailService {
         this.mailSender = mailSender;
     }
 
+    public String getCleanAppBaseUrl() {
+        if (appBaseUrl == null || appBaseUrl.isBlank()) {
+            return "https://serviceconnect-web.vercel.app";
+        }
+        String clean = appBaseUrl.trim();
+        // If user accidentally configured a markdown link e.g. [https://...](https://...)
+        if (clean.contains("(") && clean.contains(")")) {
+            clean = clean.substring(clean.indexOf('(') + 1, clean.lastIndexOf(')'));
+        }
+        // Remove any square brackets or quotes
+        clean = clean.replace("[", "").replace("]", "").replace("\"", "").replace("'", "").trim();
+        // Remove trailing slashes
+        clean = clean.replaceAll("/+$", "");
+
+        if (!clean.startsWith("http://") && !clean.startsWith("https://")) {
+            clean = "https://" + clean;
+        }
+        return clean;
+    }
+
     public void sendVerificationEmail(String toEmail, String fullName, String token, String otp) {
-        String verifyUrl = appBaseUrl + "/pages/verify-email.html?token=" + token + "&email=" + toEmail;
+        String baseUrl = getCleanAppBaseUrl();
+        String verifyUrl = baseUrl + "/pages/verify-email.html?token=" + token + "&email=" + toEmail + "&code=" + otp;
         String subject = "Verify Your ServiceConnect Account - Code: " + otp;
 
         String htmlContent = """
@@ -68,20 +89,24 @@ public class EmailService {
     }
 
     public void sendPasswordResetEmail(String toEmail, String fullName, String token) {
-        String resetUrl = appBaseUrl + "/pages/forgot-password.html?token=" + token;
+        String baseUrl = getCleanAppBaseUrl();
+        String resetUrl = baseUrl + "/pages/forgot-password.html?token=" + token;
         String subject = "Reset Your ServiceConnect Password";
 
         String htmlContent = """
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 25px; border: 1px solid #e2e8f0; border-radius: 8px;">
                 <h2 style="color: #0f172a; margin-top: 0;">Password Reset Request</h2>
                 <p style="color: #475569; font-size: 15px;">Hello %s, we received a request to reset the password for your ServiceConnect account.</p>
-                <div style="text-align: center; margin: 30px 0;">
-                    <a href="%s" style="background-color: #0f172a; color: #ffffff; padding: 12px 26px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Reset Password</a>
+                <div style="text-align: center; margin: 28px 0;">
+                    <a href="%s" style="background-color: #2563eb; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; font-size: 15px;">Reset Password</a>
                 </div>
-                <p style="color: #64748b; font-size: 13px;">Or copy and paste this link in your browser:<br/><a href="%s">%s</a></p>
-                <p style="color: #94a3b8; font-size: 13px;">This link is valid for 15 minutes. If you did not request this, please ignore this email and your password will remain unchanged.</p>
+                <p style="color: #64748b; font-size: 13px;">Or click this direct recovery link:<br/><a href="%s" style="color: #2563eb; word-break: break-all;">%s</a></p>
+                <div style="background-color: #f8fafc; padding: 12px 16px; border-radius: 6px; margin: 20px 0; font-size: 13px; color: #334155; border: 1px solid #e2e8f0;">
+                    <strong>Recovery Token:</strong> <code style="font-family: monospace; background: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-weight: bold;">%s</code>
+                </div>
+                <p style="color: #94a3b8; font-size: 12px;">This link and token are valid for 60 minutes. If you did not request this, please ignore this email and your password will remain unchanged.</p>
             </div>
-        """.formatted(fullName, resetUrl, resetUrl, resetUrl);
+        """.formatted(fullName, resetUrl, resetUrl, resetUrl, token);
 
         sendEmail(toEmail, subject, htmlContent);
     }
@@ -166,7 +191,7 @@ public class EmailService {
                     <a href="%s/pages/login.html" style="background-color: #2563eb; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Go to Provider Dashboard</a>
                 </div>
             </div>
-        """.formatted(providerName, appBaseUrl) : """
+        """.formatted(providerName, getCleanAppBaseUrl()) : """
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
                 <h2 style="color: #b91c1c; margin-top: 0;">Provider Application Update</h2>
                 <p style="color: #475569;">Hello %s, we were unable to approve your provider profile at this time.</p>

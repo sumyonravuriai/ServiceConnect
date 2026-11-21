@@ -24,7 +24,7 @@ public class PasswordResetDao {
     }
 
     public Optional<Map<String, Object>> findByToken(String token) {
-        String sql = "SELECT * FROM password_resets WHERE token = ? AND is_used = FALSE AND expires_at > NOW()";
+        String sql = "SELECT * FROM password_resets WHERE token = ? AND is_used = FALSE";
         var list = jdbcTemplate.queryForList(sql, token);
         return list.isEmpty() ? Optional.empty() : Optional.of(list.get(0));
     }
