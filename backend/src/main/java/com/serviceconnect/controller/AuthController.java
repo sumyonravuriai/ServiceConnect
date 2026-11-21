@@ -42,6 +42,12 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.ok("Email verified successfully", data));
     }
 
+    @PostMapping("/resend-verification")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> resendVerification(@RequestParam String email) {
+        Map<String, Object> data = authService.resendVerificationCode(email);
+        return ResponseEntity.ok(ApiResponse.ok("Verification code dispatched successfully", data));
+    }
+
     @PostMapping("/forgot-password")
     public ResponseEntity<ApiResponse<Map<String, Object>>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
         Map<String, Object> data = authService.forgotPassword(request);

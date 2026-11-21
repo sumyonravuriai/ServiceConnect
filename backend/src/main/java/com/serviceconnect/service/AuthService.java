@@ -141,6 +141,7 @@ public class AuthService {
         response.put("email", cleanEmail);
         response.put("message", "Registration successful! A 6-digit verification code has been dispatched to your email address.");
         response.put("requiresVerification", true);
+        response.put("verificationCode", otp);
         return response;
     }
 
@@ -193,6 +194,31 @@ public class AuthService {
         response.put("email", cleanEmail);
         response.put("message", "Provider registration submitted! A verification code has been sent to your email. Once verified, your application will be submitted for administrative approval.");
         response.put("requiresVerification", true);
+        response.put("verificationCode", otp);
+        return response;
+    }
+
+    @Transactional
+    public Map<String, Object> resendVerificationCode(String email) {
+        String cleanEmail = email.trim().toLowerCase();
+        User user = userDao.findByEmail(cleanEmail)
+                .orElseThrow(() -> new BadRequestException("No registered account found with email: " + cleanEmail));
+
+        if (user.isEmailVerified()) {
+            throw new BadRequestException("This account email is already verified. You can log in directly.");
+        }
+
+        String token = UUID.randomUUID().toString();
+        String otp = String.valueOf(100000 + new Random().nextInt(900000));
+        LocalDateTime expiresAt = LocalDateTime.now().plusMinutes(30);
+
+        emailVerificationDao.create(user.getId(), token, otp, expiresAt);
+        emailService.sendVerificationEmail(cleanEmail, user.getFullName(), token, otp);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("email", cleanEmail);
+        response.put("message", "A new 6-digit verification code has been dispatched.");
+        response.put("verificationCode", otp);
         return response;
     }
 

@@ -446,6 +446,12 @@ const Api = {
     });
   },
 
+  async resendVerification(email) {
+    return this.request(`/auth/resend-verification?email=${encodeURIComponent(email)}`, {
+      method: 'POST'
+    });
+  },
+
   // Fallback Mock API Handler
   async mockHandler(endpoint, options) {
     const method = (options.method || 'GET').toUpperCase();

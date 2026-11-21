@@ -284,8 +284,13 @@
         if (res && res.success) {
           showAlert('Registration successful! Redirecting to email verification...', false);
           showToast('Account created! Please verify your email.', 'success');
+          const otp = (res.data && res.data.verificationCode) ? res.data.verificationCode : '';
+          if (otp) {
+            sessionStorage.setItem('sc_last_otp', otp);
+          }
           setTimeout(() => {
-            window.location.href = `verify-email.html?email=${encodeURIComponent(email)}`;
+            const codeQuery = otp ? `&code=${encodeURIComponent(otp)}` : '';
+            window.location.href = `verify-email.html?email=${encodeURIComponent(email)}${codeQuery}`;
           }, 1200);
         } else {
           showAlert(res && res.message ? res.message : 'Registration failed. Please check your information.', true);

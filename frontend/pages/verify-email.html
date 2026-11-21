@@ -36,6 +36,17 @@
 
       <div id="verifyAlert" style="display: none; padding: 0.85rem 1rem; border-radius: var(--radius-md); font-size: var(--font-size-xs); font-weight: 600; margin-bottom: 1.5rem; text-align: left;"></div>
 
+      <!-- Device Quick Verification Hint Banner -->
+      <div id="deviceQuickCodeBanner" style="display: none; background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border: 1px solid #bfdbfe; border-radius: var(--radius-md); padding: 0.85rem 1rem; margin-bottom: 1.25rem; text-align: left;">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <div>
+            <span style="font-size: 11px; font-weight: 700; color: #1e40af; text-transform: uppercase;">Device Quick Code</span>
+            <div style="font-size: 1.25rem; font-weight: 800; color: #1d4ed8; letter-spacing: 3px;" id="deviceOtpText">------</div>
+          </div>
+          <button type="button" class="btn btn-sm btn-primary" onclick="autoFillDeviceCode()">Auto-Fill</button>
+        </div>
+      </div>
+
       <form id="verifyForm">
         <div class="form-group" style="text-align: left;">
           <label class="form-label" for="verifyEmail">Registered Email</label>
@@ -53,8 +64,17 @@
         </button>
       </form>
 
-      <div style="margin-top: 1.75rem; font-size: var(--font-size-xs); color: var(--color-text-muted);">
-        Didn't receive the email? Check your spam/junk folder or <a href="login.html" style="color: var(--color-accent); font-weight: 700;">return to login</a>.
+      <!-- Resend Code Actions for All Devices -->
+      <div style="margin-top: 1.25rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-size: var(--font-size-xs); color: var(--color-text-muted);">
+        <span>Didn't receive email?</span>
+        <button type="button" id="resendCodeBtn" onclick="resendVerificationOtp()" style="color: var(--color-accent); font-weight: 700; text-decoration: underline; background: none; border: none; cursor: pointer; padding: 0;">
+          Resend Code
+        </button>
+        <span id="resendCountdown" style="color: var(--color-text-muted); display: none;"></span>
+      </div>
+
+      <div style="margin-top: 1rem; font-size: var(--font-size-xs); color: var(--color-text-muted);">
+        Check your spam/junk folder or <a href="login.html" style="color: var(--color-accent); font-weight: 700;">return to login</a>.
       </div>
     </div>
   </main>
@@ -66,16 +86,91 @@
     const urlParams = new URLSearchParams(window.location.search);
     const emailParam = urlParams.get('email');
     const tokenParam = urlParams.get('token');
+    const codeParam = urlParams.get('code') || sessionStorage.getItem('sc_last_otp');
 
     if (emailParam) {
       document.getElementById('verifyEmail').value = emailParam;
     }
     if (tokenParam) {
       document.getElementById('verifyOtp').value = tokenParam;
-      // Auto-trigger if token is in URL from email click
       window.addEventListener('DOMContentLoaded', () => {
         document.getElementById('verifyForm').dispatchEvent(new Event('submit'));
       });
+    } else if (codeParam) {
+      document.getElementById('verifyOtp').value = codeParam;
+      const banner = document.getElementById('deviceQuickCodeBanner');
+      const text = document.getElementById('deviceOtpText');
+      if (banner && text) {
+        banner.style.display = 'block';
+        text.textContent = codeParam;
+      }
+    }
+
+    function autoFillDeviceCode() {
+      const text = document.getElementById('deviceOtpText');
+      if (text && text.textContent) {
+        document.getElementById('verifyOtp').value = text.textContent.trim();
+        showToast('Verification code filled!', 'info');
+      }
+    }
+
+    let resendCooldown = 0;
+    let cooldownTimer = null;
+
+    async function resendVerificationOtp() {
+      const email = document.getElementById('verifyEmail').value.trim();
+      if (!email) {
+        showAlert('Please enter your registered email address first.');
+        return;
+      }
+
+      if (resendCooldown > 0) return;
+
+      const btn = document.getElementById('resendCodeBtn');
+      const countEl = document.getElementById('resendCountdown');
+      btn.style.opacity = '0.5';
+      btn.style.pointerEvents = 'none';
+
+      try {
+        const res = await Api.resendVerification(email);
+        if (res && res.success) {
+          showAlert('✓ A new 6-digit code has been dispatched to your email!', false);
+          showToast('New verification code sent!', 'success');
+          if (res.data && res.data.verificationCode) {
+            const banner = document.getElementById('deviceQuickCodeBanner');
+            const text = document.getElementById('deviceOtpText');
+            if (banner && text) {
+              banner.style.display = 'block';
+              text.textContent = res.data.verificationCode;
+            }
+            document.getElementById('verifyOtp').value = res.data.verificationCode;
+          }
+
+          // Start 30s countdown
+          resendCooldown = 30;
+          countEl.style.display = 'inline';
+          countEl.textContent = `(${resendCooldown}s)`;
+          cooldownTimer = setInterval(() => {
+            resendCooldown--;
+            if (resendCooldown <= 0) {
+              clearInterval(cooldownTimer);
+              btn.style.opacity = '1';
+              btn.style.pointerEvents = 'auto';
+              countEl.style.display = 'none';
+            } else {
+              countEl.textContent = `(${resendCooldown}s)`;
+            }
+          }, 1000);
+        } else {
+          showAlert(res && res.message ? res.message : 'Unable to resend code.', true);
+          btn.style.opacity = '1';
+          btn.style.pointerEvents = 'auto';
+        }
+      } catch (err) {
+        showAlert(err.message || 'Error dispatching new verification code.', true);
+        btn.style.opacity = '1';
+        btn.style.pointerEvents = 'auto';
+      }
     }
 
     const verifyForm = document.getElementById('verifyForm');
